@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="EMI Calculator">
+<meta name="theme-color" content="#00b386">
+<meta name="description" content="EMI, SIP, FD, RD, Lumpsum & Stock Average Calculator">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-512.png">
+<title>EMI Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --green: #00b386; --green-lt: #e6f9f4; --red: #e8645a; --blue: #0057d9;
+  --text: #1a1a2e; --text2: #5a6478; --text3: #9ba3b0;
+  --border: #e8ecf0; --bg: #f5f7fa; --white: #fff;
+  --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.07);
+}
+body { font-family:'Inter',-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh;
+  padding-top:env(safe-area-inset-top); padding-bottom:calc(env(safe-area-inset-bottom)+20px);
+  -webkit-tap-highlight-color:transparent; }
+
+/* TOPBAR */
+.topbar { background:var(--white); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+.topbar-inner { max-width:1100px; margin:0 auto; display:flex; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.topbar-inner::-webkit-scrollbar { display:none; }
+.tab-btn { flex:0 0 auto; padding:14px 18px; border:none; background:transparent; font-family:'Inter',sans-serif;
+  font-size:0.83rem; font-weight:600; color:var(--text2); cursor:pointer; white-space:nowrap;
+  border-bottom:2.5px solid transparent; transition:all .15s; }
+.tab-btn:hover { color:var(--green); }
+.tab-btn.active { color:var(--green); border-bottom-color:var(--green); }
+
+/* LAYOUT */
+.page-head { max-width:1100px; margin:0 auto; padding:22px 16px 4px; }
+.page-title { font-size:1.25rem; font-weight:700; color:var(--text); }
+.page-body { max-width:1100px; margin:0 auto; padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+@media(max-width:680px){ .page-body{grid-template-columns:1fr;} }
+
+/* CARD */
+.card { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px; }
+
+/* CHIP */
+.chip-row { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+.chip { padding:6px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--white);
+  font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600; color:var(--text2); cursor:pointer; transition:all .15s; }
+.chip.active { border-color:var(--green); background:var(--green-lt); color:var(--green); }
+
+/* FIELD */
+.field { margin-bottom:22px; }
+.field-lbl { font-size:0.83rem; font-weight:500; color:var(--text2); margin-bottom:8px; display:block; }
+.inp-wrap { display:flex; align-items:stretch; border:1.5px solid var(--border); border-radius:8px; overflow:hidden; background:var(--white); transition:border-color .15s; }
+.inp-wrap:focus-within { border-color:var(--green); }
+.inp-pfx, .inp-sfx { padding:10px 12px; background:#f9fafb; font-size:0.88rem; font-weight:600; color:var(--text2);
+  border:none; user-select:none; display:flex; align-items:center; }
+.inp-pfx { border-right:1.5px solid var(--border); }
+.inp-sfx { border-left:1.5px solid var(--border); }
+.inp { flex:1; border:none; outline:none; padding:10px 12px; font-family:'Inter',sans-serif;
+  font-size:0.95rem; font-weight:600; color:var(--text); background:transparent; min-width:0; width:100%; }
+.inp::-webkit-outer-spin-button,.inp::-webkit-inner-spin-button{-webkit-appearance:none;}
+.inp[type=number]{-moz-appearance:textfield;}
+
+/* SLIDER */
+.sl-wrap { margin-top:8px; }
+input[type=range] { width:100%; height:4px; -webkit-appearance:none; appearance:none; background:var(--border); border-radius:2px; outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%;
+  background:var(--green); cursor:pointer; margin-top:-8px; box-shadow:0 1px 5px rgba(0,179,134,.35); border:2.5px solid #fff; }
+input[type=range]::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:var(--green); border:2.5px solid #fff; cursor:pointer; }
+.sl-lbl { display:flex; justify-content:space-between; margin-top:4px; font-size:0.68rem; color:var(--text3); }
+
+/* TENURE PAIR */
+.tenure-pair { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+/* RESULT */
+.res-row { display:flex; justify-content:space-between; align-items:center; padding:13px 0; border-bottom:1px solid var(--border); }
+.res-row:last-child { border-bottom:none; }
+.res-key { font-size:0.84rem; color:var(--text2); display:flex; align-items:center; gap:7px; }
+.dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.dg{background:var(--green);} .dr{background:var(--red);} .db{background:var(--blue);}
+.res-val { font-size:0.93rem; font-weight:700; color:var(--text); }
+.res-val.big { font-size:1.5rem; color:var(--green); }
+.res-val.cg{color:var(--green);} .res-val.cr{color:var(--red);}
+.res-main { border-bottom:2px solid var(--border)!important; padding-bottom:16px!important; margin-bottom:2px; }
+
+/* PIE */
+.pie-wrap { display:flex; flex-direction:column; align-items:center; padding:18px 0 4px; }
+.pie-lgd { display:flex; gap:18px; margin-top:12px; flex-wrap:wrap; justify-content:center; }
+.lgd-item { display:flex; align-items:center; gap:6px; font-size:0.77rem; color:var(--text2); font-weight:500; }
+
+/* AMORTIZATION */
+.amort-sec { max-width:1100px; margin:0 auto 28px; padding:0 16px; }
+.amort-card { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+.amort-head { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:8px; }
+.amort-ttl { font-size:0.92rem; font-weight:700; color:var(--text); }
+.toggle-pill { display:flex; background:var(--bg); border-radius:20px; padding:3px; }
+.pill-btn { padding:5px 14px; border:none; border-radius:16px; background:transparent;
+  font-family:'Inter',sans-serif; font-size:0.74rem; font-weight:600; color:var(--text2); cursor:pointer; transition:all .15s; }
+.pill-btn.active { background:var(--white); color:var(--green); box-shadow:0 1px 4px rgba(0,0,0,.1); }
+.tbl-scroll { overflow-x:auto; max-height:340px; overflow-y:auto; }
+table { width:100%; border-collapse:collapse; font-size:0.81rem; }
+thead th { background:#f9fafb; padding:10px 16px; text-align:right; font-size:0.73rem; font-weight:600; color:var(--text2); position:sticky; top:0; white-space:nowrap; }
+thead th:first-child { text-align:left; }
+tbody tr { border-bottom:1px solid var(--border); }
+tbody tr:hover { background:#f9fbff; }
+tbody td { padding:9px 16px; text-align:right; color:var(--text2); }
+tbody td:first-child { text-align:left; color:var(--text); font-weight:500; }
+.tg{color:var(--green)!important;font-weight:600;} .tr{color:var(--red)!important;font-weight:600;} .tb{color:var(--blue)!important;font-weight:600;}
+
+/* COMPARE */
+.cmp-grid { max-width:1100px; margin:0 auto; padding:0 16px 12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(175px,1fr)); gap:12px; }
+.cmp-card { background:var(--white); border:1.5px solid var(--border); border-radius:var(--radius); padding:16px; transition:all .15s; }
+.cmp-card.winner { border-color:var(--green); background:var(--green-lt); }
+.cmp-icon { font-size:1.5rem; margin-bottom:7px; }
+.cmp-name { font-size:0.7rem; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+.cmp-amt { font-size:1.1rem; font-weight:700; color:var(--text); }
+.cmp-note { font-size:0.7rem; color:var(--text3); margin-top:2px; }
+.win-tag { display:inline-block; margin-top:6px; padding:2px 8px; background:var(--green); color:#fff; border-radius:20px; font-size:0.64rem; font-weight:700; }
+
+/* PANEL */
+.calc-panel { display:none; }
+.calc-panel.active { display:block; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* STOCK AVERAGE */
+.avg-body { max-width:1100px; margin:0 auto; padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+@media(max-width:680px){ .avg-body{grid-template-columns:1fr;} }
+
+.buy-row { display:grid; grid-template-columns:auto 1fr 1fr auto; gap:10px; align-items:center; margin-bottom:10px; }
+.buy-num { width:28px; height:28px; background:var(--green-lt); color:var(--green); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; flex-shrink:0; }
+.del-btn { width:30px; height:30px; border:1.5px solid #ffd0cd; background:#fff5f5; border-radius:8px; color:var(--red); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; }
+.del-btn:hover { background:var(--red); color:#fff; }
+.add-btn { display:flex; align-items:center; gap:8px; padding:10px 16px; border:1.5px dashed var(--green); background:var(--green-lt); border-radius:8px; color:var(--green); font-family:'Inter',sans-serif; font-size:0.83rem; font-weight:600; cursor:pointer; width:100%; justify-content:center; margin-top:4px; transition:all .15s; }
+.add-btn:hover { background:#cdf5ec; }
+
+.avg-stat { display:flex; flex-direction:column; gap:4px; padding:14px 16px; background:var(--bg); border-radius:10px; margin-bottom:10px; }
+.avg-stat-lbl { font-size:0.75rem; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; }
+.avg-stat-val { font-size:1.25rem; font-weight:700; color:var(--text); }
+.avg-stat-val.big { font-size:1.6rem; color:var(--green); }
+
+.avg-bar-wrap { background:var(--border); border-radius:4px; height:8px; overflow:hidden; margin-top:6px; }
+.avg-bar { height:100%; border-radius:4px; background:var(--green); transition:width .4s ease; }
+
+.price-tag { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; }
+.tag-profit { background:#e6f9f4; color:var(--green); }
+.tag-loss { background:#fff0ee; color:var(--red); }
+
+/* PWA */
+#pwa-banner { display:none; position:fixed; bottom:calc(env(safe-area-inset-bottom)+10px); left:12px; right:12px;
+  background:var(--white); border:1.5px solid var(--green); border-radius:var(--radius); padding:12px 14px; z-index:999;
+  align-items:center; gap:10px; box-shadow:0 4px 20px rgba(0,179,134,.18); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner" id="mainNav">
+    <button class="tab-btn active" data-tab="emi">EMI Calculator</button>
+    <button class="tab-btn" data-tab="sip">SIP Calculator</button>
+    <button class="tab-btn" data-tab="avg">Stock Average</button>
+    <button class="tab-btn" data-tab="compare">Compare All</button>
+    <button class="tab-btn" data-tab="fd">FD Calculator</button>
+    <button class="tab-btn" data-tab="rd">RD Calculator</button>
+    <button class="tab-btn" data-tab="lumpsum">Lumpsum</button>
+  </div>
+</div>
+
+<!-- ══ EMI ══ -->
+<div class="calc-panel active" id="tab-emi">
+  <div class="page-head"><div class="page-title">EMI Calculator</div></div>
+  <div class="page-body">
+    <div class="card">
+      <div class="chip-row">
+        <button class="chip active" onclick="setLoan('home',this)">🏠 Home Loan</button>
+        <button class="chip" onclick="setLoan('car',this)">🚗 Car Loan</button>
+        <button class="chip" onclick="setLoan('personal',this)">👤 Personal</button>
+      </div>
+
+      <div class="field">
+        <label class="field-lbl">Loan amount</label>
+        <div class="inp-wrap">
+          <input class="inp" type="number" id="ep-i" value="5000000" min="0" max="100000000" oninput="s2i('ep-i','ep-s',0,1e8);ce()">
+        </div>
+        <div class="sl-wrap">
+          <input type="range" id="ep-s" min="0" max="100000000" step="1000" value="5000000" oninput="i2s('ep-s','ep-i');ce()">
+          <div class="sl-lbl"><span>0</span><span>10Cr</span></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-lbl">Rate of interest (p.a)</label>
+        <div class="inp-wrap">
+          <input class="inp" type="number" id="er-i" value="8.5" min="1" max="24" step="0.1" oninput="s2i('er-i','er-s',1,24);ce()">
+          <span class="inp-sfx">%</span>
+        </div>
+        <div class="sl-wrap">
+          <input type="range" id="er-s" min="1" max="24" step="0.1" value="8.5" oninput="i2s('er-s','er-i');ce()">
+          <div class="sl-lbl"><span>1%</span><span>24%</span></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-lbl">Loan tenure</label>
+        <div class="tenure-pair">
+          <div>
+            <div class="inp-wrap">
+              <input class="inp" type="number" id="eyr-i" value="20" min="0" max="30" oninput="s2i('eyr-i','eyr-s',0,30);ce()">
+              <span class="inp-sfx">Yr</span>
+            </div>
+            <div class="sl-wrap">
+              <input type="range" id="eyr-s" min="0" max="30" step="1" value="20" oninput="i2s('eyr-s','eyr-i');ce()">
+              <div class="sl-lbl"><span>0</span><span>30 Yr</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="inp-wrap">
+              <input class="inp" type="number" id="emo-i" value="0" min="0" max="11" oninput="s2i('emo-i','emo-s',0,11);ce()">
+              <span class="inp-sfx">Mo</span>
+            </div>
+            <div class="sl-wrap">
+              <input type="range" id="emo-s" min="0" max="11" step="1" value="0" oninput="i2s('emo-s','emo-i');ce()">
+              <div class="sl-lbl"><span>0</span><span>11 Mo</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="res-row res-main">
+        <span class="res-key" style="font-weight:700;color:var(--text);font-size:.92rem">Monthly EMI</span>
+        <span class="res-val big" id="e-emi">₹43,391</span>
+      </div>
+      <div class="res-row"><span class="res-key"><span class="dot dg"></span>Principal amount</span><span class="res-val cg" id="e-p">₹50,00,000</span></div>
+      <div class="res-row"><span class="res-key"><span class="dot dr"></span>Total interest</span><span class="res-val cr" id="e-int">₹54,13,820</span></div>
+      <div class="res-row"><span class="res-key"><span class="dot db"></span>Total amount</span><span class="res-val" id="e-tot">₹1,04,13,820</span></div>
+      <div class="pie-wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#e8ecf0" stroke-width="24"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#00b386" stroke-width="24" stroke-dasharray="377" stroke-dashoffset="0" id="ep-arc" transform="rotate(-90 80 80)"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#e8645a" stroke-width="24" stroke-dasharray="377" stroke-dashoffset="0" id="ei-arc" transform="rotate(-90 80 80)"/>
+        </svg>
+        <div class="pie-lgd">
+          <div class="lgd-item"><span class="dot dg"></span>Principal amount</div>
+          <div class="lgd-item"><span class="dot dr"></span>Interest amount</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="amort-sec">
+    <div class="amort-card">
+      <div class="amort-head">
+        <span class="amort-ttl">Your Amortization Details</span>
+        <div class="toggle-pill">
+          <button class="pill-btn active" onclick="setEmiMode('yr',this)">Yearly</button>
+          <button class="pill-btn" onclick="setEmiMode('mo',this)">Monthly</button>
+        </div>
+      </div>
+      <div class="tbl-scroll">
+        <table><thead><tr><th>Period</th><th>Principal</th><th>Interest</th><th>Total Payment</th><th>Balance</th></tr></thead>
+        <tbody id="e-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SIP ══ -->
+<div class="calc-panel" id="tab-sip">
+  <div class="page-head"><div class="page-title">SIP Calculator</div></div>
+  <div class="page-body">
+    <div class="card">
+      <div class="field"><label class="field-lbl">Monthly investment</label>
+        <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="sa-i" value="10000" min="500" max="200000" oninput="s2i('sa-i','sa-s',500,2e5);cs()"></div>
+        <div class="sl-wrap"><input type="range" id="sa-s" min="500" max="200000" step="500" value="10000" oninput="i2s('sa-s','sa-i');cs()"><div class="sl-lbl"><span>₹500</span><span>₹2L</span></div></div>
+      </div>
+      <div class="field"><label class="field-lbl">Expected return rate (p.a)</label>
+        <div class="inp-wrap"><input class="inp" type="number" id="sr-i" value="12" min="1" max="30" step="0.5" oninput="s2i('sr-i','sr-s',1,30);cs()"><span class="inp-sfx">%</span></div>
+        <div class="sl-wrap"><input type="range" id="sr-s" min="1" max="30" step="0.5" value="12" oninput="i2s('sr-s','sr-i');cs()"><div class="sl-lbl"><span>1%</span><span>30%</span></div></div>
+      </div>
+      <div class="field"><label class="field-lbl">Time period</label>
+        <div class="inp-wrap"><input class="inp" type="number" id="st-i" value="15" min="1" max="40" oninput="s2i('st-i','st-s',1,40);cs()"><span class="inp-sfx">Yr</span></div>
+        <div class="sl-wrap"><input type="range" id="st-s" min="1" max="40" step="1" value="15" oninput="i2s('st-s','st-i');cs()"><div class="sl-lbl"><span>1 Yr</span><span>40 Yr</span></div></div>
+      </div>
+      <div class="field"><label class="field-lbl">Annual step-up</label>
+        <div class="inp-wrap"><input class="inp" type="number" id="ss-i" value="0" min="0" max="25" oninput="s2i('ss-i','ss-s',0,25);cs()"><span class="inp-sfx">%</span></div>
+        <div class="sl-wrap"><input type="range" id="ss-s" min="0" max="25" step="1" value="0" oninput="i2s('ss-s','ss-i');cs()"><div class="sl-lbl"><span>0%</span><span>25%</span></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="res-row res-main"><span class="res-key" style="font-weight:700;color:var(--text);font-size:.92rem">Total value</span><span class="res-val big" id="s-tot">₹1.00 Cr</span></div>
+      <div class="res-row"><span class="res-key"><span class="dot dg"></span>Invested amount</span><span class="res-val cg" id="s-inv">₹18,00,000</span></div>
+      <div class="res-row"><span class="res-key"><span class="dot dr"></span>Est. returns</span><span class="res-val cr" id="s-ret">₹82,46,463</span></div>
+      <div class="res-row"><span class="res-key">Wealth multiplier</span><span class="res-val" id="s-mul">5.58x</span></div>
+      <div class="pie-wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#e8ecf0" stroke-width="24"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#00b386" stroke-width="24" stroke-dasharray="377" id="si-arc" transform="rotate(-90 80 80)"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#e8645a" stroke-width="24" stroke-dasharray="377" id="sr-arc" transform="rotate(-90 80 80)"/>
+        </svg>
+        <div class="pie-lgd"><div class="lgd-item"><span class="dot dg"></span>Invested</div><div class="lgd-item"><span class="dot dr"></span>Returns</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="amort-sec"><div class="amort-card">
+    <div class="amort-head"><span class="amort-ttl">Year-wise SIP Growth</span></div>
+    <div class="tbl-scroll"><table><thead><tr><th>Year</th><th>Invested (Year)</th><th>Total Invested</th><th>Total Value</th><th>Est. Returns</th></tr></thead><tbody id="s-tbody"></tbody></table></div>
+  </div></div>
+</div>
+
+<!-- ══ FD ══ -->
+<div class="calc-panel" id="tab-fd">
+  <div class="page-head"><div class="page-title">Fixed Deposit Calculator</div></div>
+  <div class="page-body">
+    <div class="card">
+      <div class="field"><label class="field-lbl">Total investment</label>
+        <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="fp-i" value="100000" min="1000" max="5000000" oninput="s2i('fp-i','fp-s',1000,5e6);cf()"></div>
+        <div class="sl-wrap"><input type="range" id="fp-s" min="1000" max="5000000" step="1000" value="100000" oninput="i2s('fp-s','fp-i');cf()"><div class="sl-lbl"><span>₹1K</span><span>₹50L</span></div></div>
+      </div>
+      <div class="field"><label class="field-lbl">Rate of interest (p.a)</label>
+        <div class="inp-wrap"><input class="inp" type="number" id="fr-i" value="7" min="1" max="15" step="0.1" oninput="s2i('fr-i','fr-s',1,15);cf()"><span class="inp-sfx">%</span></div>
+        <div class="sl-wrap"><input type="range" id="fr-s" min="1" max="15" step="0.1" value="7" oninput="i2s('fr-s','fr-i');cf()"><div class="sl-lbl"><span>1%</span><span>15%</span></div></div>
+      </div>
+      <div class="field"><label class="field-lbl">Time period</label>
+        <div class="inp-wrap"><input class="inp" type="number" id="ft-i" value="5" min="1" max="20" oninput="s2i('ft-i','ft-s',1,20);cf()"><span class="inp-sfx">Yr</span></div>
+        <div class="sl-wrap"><input type="range" id="ft-s" min="1" max="20" step="1" value="5" oninput="i2s('ft-s','ft-i');cf()"><div class="sl-lbl"><span>1 Yr</span><span>20 Yr</span></div></div>
+      </div>
+      <div class="field"><label class="field-lbl">Compounding frequency</label>
+        <div class="chip-row" style="margin:6px 0 0">
+          <button class="chip" onclick="setFDC(1,this)">Annual</button>
+          <button class="chip" onclick="setFDC(2,this)">Half-Yearly</button>
+          <button class="chip active" onclick="setFDC(4,this)">Quarterly</button>
+          <button class="chip" onclick="setFDC(12,this)">Monthly</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="res-row res-main"><span class="res-key" style="font-weight:700;color:var(--text);font-size:.92rem">Maturity value</span><span class="res-val big" id="f-mat">₹1,41,478</span></div>
+      <div class="res-row"><span class="res-key"><span class="dot dg"></span>Invested amount</span><span class="res-val cg" id="f-p">₹1,00,000</span></div>
+      <div class="res-row"><span class="res-key"><span class="dot dr"></span>Est. returns</span><span class="res-val cr" id="f-int">₹41,478</span></div>
+      <div class="res-row"><span class="res-key">Effective yield</span><span class="res-val" id="f-yld">7.19% p.a.</span></div>
+      <div class="pie-wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#e8ecf0" stroke-width="24"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#00b386" stroke-width="24" stroke-dasharray="377" id="fp-arc" transform="rotate(-90 80 80)"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#e8645a" stroke-width="24" stroke-dasharray="377" id="fi-arc" transform="rotate(-90 80 80)"/>
+        </svg>
+        <div class="pie-lgd"><div class="lgd-item"><span class="dot dg"></span>Invested</div><div class="lgd-item"><span class="dot dr"></span>Returns</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="amort-sec"><div class="amort-card">
+    <div class="amort-head"><span class="amort-ttl">Year-wise FD Growth</span></div>
+    <div class="tbl-scroll"><table><thead><tr><th>Year</th><th>Opening Balance</th><th>Interest Earned</th><th>Closing Balance</th></tr></thead><tbody id="f-tbody"></tbody></table></div>
+  </div></div>
+</div>
+
+<!-- ══ RD ══ -->
+<div class="calc-panel" id="tab-rd">
+  <div class="page-head"><div class="page-title">Recurring Deposit Calculator</div></div>
+  <div class="page-body">
+    <div class="card">
+      <div class="field"><label class="field-lbl">Monthly investment</label>
+        <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="ra-i" value="5000" min="100" max="100000" oninput="s2i('ra-i','ra-s',100,1e5);cr()"></div>
+        <div class="sl-wrap"><input type="range" id="ra-s" min="100" max="100000" step="100" value="5000" oninput="i2s('ra-s','ra-i');cr()"><div class="sl-lbl"><span>₹100</span><span>₹1L</span></div></div>
+      </div>
+      <div class="field"><label class="field-lbl">Rate of interest (p.a)</label>
+        <div class="inp-wrap"><input class="inp" type="number" id="rr-i" value="6.5" min="1" max="12" step="0.1" oninput="s2i('rr-i','rr-s',1,12);cr()"><span class="inp-sfx">%</span></div>
+        <div class="sl-wrap"><input type="range" id="rr-s" min="1" max="12" step="0.1" value="6.5" oninput="i2s('rr-s','rr-i');cr()"><div class="sl-lbl"><span>1%</span><span>12%</span></div></div>
+      </div>
+      <div class="field"><label class="field-lbl">Time period</label>
+        <div class="inp-wrap"><input class="inp" type="number" id="rt-i" value="3" min="1" max="10" oninput="s2i('rt-i','rt-s',1,10);cr()"><span class="inp-sfx">Yr</span></div>
+        <div class="sl-wrap"><input type="range" id="rt-s" min="1" max="10" step="1" value="3" oninput="i2s('rt-s','rt-i');cr()"><div class="sl-lbl"><span>1 Yr</span><span>10 Yr</span></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="res-row res-main"><span class="res-key" style="font-weight:700;color:var(--text);font-size:.92rem">Maturity value</span><span class="res-val big" id="r-mat">₹1,97,892</span></div>
+      <div class="res-row"><span class="res-key"><span class="dot dg"></span>Invested amount</span><span class="res-val cg" id="r-inv">₹1,80,000</span></div>
+      <div class="res-row"><span class="res-key"><span class="dot dr"></span>Est. returns</span><span class="res-val cr" id="r-int">₹17,892</span></div>
+      <div class="res-row"><span class="res-key">Effective yield</span><span class="res-val" id="r-eff">6.66% p.a.</span></div>
+      <div class="pie-wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#e8ecf0" stroke-width="24"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#00b386" stroke-width="24" stroke-dasharray="377" id="ri-arc" transform="rotate(-90 80 80)"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#e8645a" stroke-width="24" stroke-dasharray="377" id="rr-arc" transform="rotate(-90 80 80)"/>
+        </svg>
+        <div class="pie-lgd"><div class="lgd-item"><span class="dot dg"></span>Invested</div><div class="lgd-item"><span class="dot dr"></span>Returns</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="amort-sec"><div class="amort-card">
+    <div class="amort-head"><span class="amort-ttl">Year-wise RD Growth</span></div>
+    <div class="tbl-scroll"><table><thead><tr><th>Year</th><th>Deposited (Year)</th><th>Total Deposited</th><th>Interest Earned</th><th>Total Value</th></tr></thead><tbody id="r-tbody"></tbody></table></div>
+  </div></div>
+</div>
+
+<!-- ══ LUMPSUM ══ -->
+<div class="calc-panel" id="tab-lumpsum">
+  <div class="page-head"><div class="page-title">Lumpsum Calculator</div></div>
+  <div class="page-body">
+    <div class="card">
+      <div class="field"><label class="field-lbl">Total investment</label>
+        <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="la-i" value="500000" min="1000" max="10000000" oninput="s2i('la-i','la-s',1000,1e7);cl()"></div>
+        <div class="sl-wrap"><input type="range" id="la-s" min="1000" max="10000000" step="1000" value="500000" oninput="i2s('la-s','la-i');cl()"><div class="sl-lbl"><span>₹1K</span><span>₹1Cr</span></div></div>
+      </div>
+      <div class="field"><label class="field-lbl">Expected return rate (p.a)</label>
+        <div class="inp-wrap"><input class="inp" type="number" id="lr-i" value="12" min="1" max="30" step="0.5" oninput="s2i('lr-i','lr-s',1,30);cl()"><span class="inp-sfx">%</span></div>
+        <div class="sl-wrap"><input type="range" id="lr-s" min="1" max="30" step="0.5" value="12" oninput="i2s('lr-s','lr-i');cl()"><div class="sl-lbl"><span>1%</span><span>30%</span></div></div>
+      </div>
+      <div class="field"><label class="field-lbl">Time period</label>
+        <div class="inp-wrap"><input class="inp" type="number" id="lt-i" value="10" min="1" max="40" oninput="s2i('lt-i','lt-s',1,40);cl()"><span class="inp-sfx">Yr</span></div>
+        <div class="sl-wrap"><input type="range" id="lt-s" min="1" max="40" step="1" value="10" oninput="i2s('lt-s','lt-i');cl()"><div class="sl-lbl"><span>1 Yr</span><span>40 Yr</span></div></div>
+      </div>
+      <div class="field"><label class="field-lbl">Inflation rate (optional)</label>
+        <div class="inp-wrap"><input class="inp" type="number" id="li-i" value="6" min="0" max="12" step="0.5" oninput="s2i('li-i','li-s',0,12);cl()"><span class="inp-sfx">%</span></div>
+        <div class="sl-wrap"><input type="range" id="li-s" min="0" max="12" step="0.5" value="6" oninput="i2s('li-s','li-i');cl()"><div class="sl-lbl"><span>0%</span><span>12%</span></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="res-row res-main"><span class="res-key" style="font-weight:700;color:var(--text);font-size:.92rem">Total value</span><span class="res-val big" id="l-fv">₹15,52,924</span></div>
+      <div class="res-row"><span class="res-key"><span class="dot dg"></span>Invested amount</span><span class="res-val cg" id="l-p">₹5,00,000</span></div>
+      <div class="res-row"><span class="res-key"><span class="dot dr"></span>Est. returns</span><span class="res-val cr" id="l-g">₹10,52,924</span></div>
+      <div class="res-row"><span class="res-key">Inflation-adj. value</span><span class="res-val" id="l-rl">₹8,67,136</span></div>
+      <div class="res-row"><span class="res-key">Wealth multiplier</span><span class="res-val" id="l-ml">3.11x</span></div>
+      <div class="pie-wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#e8ecf0" stroke-width="24"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#00b386" stroke-width="24" stroke-dasharray="377" id="lp-arc" transform="rotate(-90 80 80)"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#e8645a" stroke-width="24" stroke-dasharray="377" id="lg-arc" transform="rotate(-90 80 80)"/>
+        </svg>
+        <div class="pie-lgd"><div class="lgd-item"><span class="dot dg"></span>Invested</div><div class="lgd-item"><span class="dot dr"></span>Returns</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="amort-sec"><div class="amort-card">
+    <div class="amort-head"><span class="amort-ttl">Year-wise Growth</span></div>
+    <div class="tbl-scroll"><table><thead><tr><th>Year</th><th>Nominal Value</th><th>Real Value</th><th>Total Gain</th></tr></thead><tbody id="l-tbody"></tbody></table></div>
+  </div></div>
+</div>
+
+<!-- ══ COMPARE ══ -->
+<div class="calc-panel" id="tab-compare">
+  <div class="page-head"><div class="page-title">Compare All</div></div>
+
+  <!-- Mode toggle -->
+  <div style="max-width:1100px;margin:0 auto;padding:8px 16px 0">
+    <div class="toggle-pill" style="width:fit-content">
+      <button class="pill-btn active" id="cmp-mode-inv" onclick="setCmpMode('invest',this)">📈 Investments</button>
+      <button class="pill-btn" id="cmp-mode-loan" onclick="setCmpMode('loan',this)">🏦 Loans</button>
+    </div>
+  </div>
+
+  <!-- INVESTMENT COMPARE -->
+  <div id="cmp-invest-section">
+    <div style="max-width:1100px;margin:0 auto;padding:12px 16px">
+      <div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="field" style="margin:0">
+          <label class="field-lbl">Investment amount</label>
+          <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="ca-i" value="100000" min="1000" max="5000000" oninput="s2i('ca-i','ca-s',1000,5e6);cmp()"></div>
+          <div class="sl-wrap"><input type="range" id="ca-s" min="1000" max="5000000" step="1000" value="100000" oninput="i2s('ca-s','ca-i');cmp()"><div class="sl-lbl"><span>₹1K</span><span>₹50L</span></div></div>
+        </div>
+        <div class="field" style="margin:0">
+          <label class="field-lbl">Time period</label>
+          <div class="inp-wrap"><input class="inp" type="number" id="ct-i" value="10" min="1" max="30" oninput="s2i('ct-i','ct-s',1,30);cmp()"><span class="inp-sfx">Yr</span></div>
+          <div class="sl-wrap"><input type="range" id="ct-s" min="1" max="30" step="1" value="10" oninput="i2s('ct-s','ct-i');cmp()"><div class="sl-lbl"><span>1 Yr</span><span>30 Yr</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cmp-grid" id="cmp-grid"></div>
+    <div class="amort-sec"><div class="amort-card">
+      <div class="amort-head"><span class="amort-ttl">Side-by-side Comparison</span></div>
+      <div class="tbl-scroll"><table><thead><tr><th>Option</th><th>Invested</th><th>Returns</th><th>Total Value</th><th>Rate</th></tr></thead><tbody id="cmp-tbody"></tbody></table></div>
+    </div></div>
+  </div>
+
+  <!-- LOAN COMPARE -->
+  <div id="cmp-loan-section" style="display:none">
+    <div style="max-width:1100px;margin:0 auto;padding:12px 16px">
+      <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <div class="field" style="margin:0">
+            <label class="field-lbl">Loan amount</label>
+            <div class="inp-wrap"><input class="inp" type="number" id="cl-p-i" value="3000000" min="0" max="100000000" oninput="s2i('cl-p-i','cl-p-s',0,1e8);cmpLoan()"></div>
+            <div class="sl-wrap"><input type="range" id="cl-p-s" min="0" max="100000000" step="1000" value="3000000" oninput="i2s('cl-p-s','cl-p-i');cmpLoan()"><div class="sl-lbl"><span>0</span><span>10Cr</span></div></div>
+          </div>
+          <div class="field" style="margin:0">
+            <label class="field-lbl">Tenure (years)</label>
+            <div class="inp-wrap"><input class="inp" type="number" id="cl-t-i" value="20" min="1" max="30" oninput="s2i('cl-t-i','cl-t-s',1,30);cmpLoan()"><span class="inp-sfx">Yr</span></div>
+            <div class="sl-wrap"><input type="range" id="cl-t-s" min="1" max="30" step="1" value="20" oninput="i2s('cl-t-s','cl-t-i');cmpLoan()"><div class="sl-lbl"><span>1</span><span>30 Yr</span></div></div>
+          </div>
+          <div class="field" style="margin:0">
+            <label class="field-lbl" style="opacity:0">-</label>
+            <div style="padding-top:4px;font-size:0.8rem;color:var(--text2);line-height:1.6">
+              Comparing <b>Home</b>, <b>Car</b> &amp; <b>Personal</b> loan rates side by side
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loan cards -->
+    <div style="max-width:1100px;margin:0 auto;padding:0 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px" id="loan-cmp-cards"></div>
+
+    <!-- Loan comparison table -->
+    <div class="amort-sec"><div class="amort-card">
+      <div class="amort-head">
+        <span class="amort-ttl">Loan Comparison Details</span>
+        <span style="font-size:0.75rem;color:var(--text3)">Lower total interest = Better deal</span>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th>Loan Type</th><th>Rate</th><th>Monthly EMI</th><th>Total Interest</th><th>Total Payment</th><th>Interest %</th>
+          </tr></thead>
+          <tbody id="loan-cmp-tbody"></tbody>
+        </table>
+      </div>
+    </div></div>
+
+    <!-- Year-wise EMI breakdown -->
+    <div class="amort-sec" style="margin-top:-8px"><div class="amort-card">
+      <div class="amort-head">
+        <span class="amort-ttl">Year-wise Interest Outflow</span>
+        <div class="toggle-pill">
+          <button class="pill-btn active" onclick="setLoanCmpYear(this)">Yearly</button>
+        </div>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>Year</th><th style="color:#0057d9">🏠 Home Loan</th><th style="color:#00b386">🚗 Car Loan</th><th style="color:#e8645a">👤 Personal</th><th>Cheapest</th></tr></thead>
+          <tbody id="loan-cmp-year-tbody"></tbody>
+        </table>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ══ STOCK AVERAGE ══ -->
+<div class="calc-panel" id="tab-avg">
+  <div class="page-head"><div class="page-title">Stock Average Calculator</div></div>
+  <div class="avg-body">
+
+    <!-- LEFT: Buy entries -->
+    <div class="card">
+      <div class="chip-row">
+        <button class="chip active" onclick="setAvgType('stock',this)">📈 Stocks</button>
+        <button class="chip" onclick="setAvgType('mf',this)">💼 Mutual Fund</button>
+        <button class="chip" onclick="setAvgType('crypto',this)">🪙 Crypto</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:auto 1fr 1fr auto;gap:10px;margin-bottom:8px;padding:0 2px">
+        <div></div>
+        <div style="font-size:0.73rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Qty / Units</div>
+        <div style="font-size:0.73rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Buy Price (₹)</div>
+        <div></div>
+      </div>
+
+      <div id="avg-rows"></div>
+
+      <button class="add-btn" onclick="addAvgRow()">+ Add Another Buy</button>
+
+      <!-- CMP Input -->
+      <div class="field" style="margin-top:20px;margin-bottom:0">
+        <label class="field-lbl">Current Market Price (CMP)</label>
+        <div class="inp-wrap">
+          <span class="inp-pfx">₹</span>
+          <input class="inp" type="number" id="avg-cmp" placeholder="Enter current price" oninput="calcAvg()">
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div class="card" id="avg-result-card">
+      <div id="avg-results">
+        <div style="text-align:center;padding:40px 20px;color:var(--text3)">
+          <div style="font-size:2.5rem;margin-bottom:12px">📊</div>
+          <div style="font-size:0.9rem;font-weight:500">Add buy entries to see your average cost</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Breakeven table -->
+  <div class="amort-sec">
+    <div class="amort-card">
+      <div class="amort-head">
+        <span class="amort-ttl">Buy History</span>
+        <span id="avg-total-tag" style="font-size:0.8rem;color:var(--text2)"></span>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Qty / Units</th><th>Buy Price</th><th>Investment</th><th>% of Total</th><th>P&amp;L at CMP</th>
+          </tr></thead>
+          <tbody id="avg-tbody"></tbody>
+          <tfoot id="avg-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <span style="font-size:1.3rem">📱</span>
+  <div style="flex:1"><div style="font-size:.82rem;font-weight:700">Add to Home Screen</div>
+    <div style="font-size:.72rem;color:var(--text2);margin-top:2px">Tap <b style="color:var(--green)">Share ↑</b> → <b style="color:var(--green)">"Add to Home Screen"</b></div></div>
+  <button onclick="document.getElementById('pwa-banner').style.display='none'" style="background:none;border:none;color:var(--text3);font-size:1.2rem;cursor:pointer">✕</button>
+</div>
+
+<script>
+const fmt = n => '₹'+Math.round(n).toLocaleString('en-IN');
+const fmtC = n => n>=1e7?'₹'+(n/1e7).toFixed(2)+' Cr':n>=1e5?'₹'+(n/1e5).toFixed(2)+' L':fmt(n);
+
+// sync helpers
+function i2s(sId,iId){ const s=document.getElementById(sId),i=document.getElementById(iId); if(s&&i)i.value=s.value; }
+function s2i(iId,sId,mn,mx){ const i=document.getElementById(iId),s=document.getElementById(sId); if(!i||!s)return; let v=parseFloat(i.value); if(isNaN(v))return; s.value=Math.min(Math.max(v,mn),mx); }
+
+// pie draw
+function pie(id1,id2,v1,v2){ const t=v1+v2; if(t<=0)return; const C=377,s1=(v1/t)*C,s2=(v2/t)*C;
+  const e1=document.getElementById(id1),e2=document.getElementById(id2);
+  if(e1){e1.setAttribute('stroke-dasharray',s1+' '+(C-s1));e1.setAttribute('stroke-dashoffset','0');}
+  if(e2){e2.setAttribute('stroke-dasharray',s2+' '+(C-s2));e2.setAttribute('stroke-dashoffset',-s1);} }
+
+// tabs
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.calc-panel').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+  if(b.dataset.tab==='compare')cmp();
+}));
+
+// EMI
+let emiMode='yr';
+function setEmiMode(m,el){ el.closest('.toggle-pill').querySelectorAll('.pill-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active'); emiMode=m; ce(); }
+const lp={home:{r:8.5,yr:20,mo:0},car:{r:9,yr:7,mo:0},personal:{r:14,yr:5,mo:0}};
+function setLoan(t,el){ document.querySelectorAll('#tab-emi .chip').forEach(b=>b.classList.remove('active')); el.classList.add('active');
+  ['ep-i','ep-s'].forEach(id=>document.getElementById(id)); // principal stays
+  document.getElementById('er-i').value=document.getElementById('er-s').value=lp[t].r;
+  document.getElementById('eyr-i').value=document.getElementById('eyr-s').value=lp[t].yr;
+  document.getElementById('emo-i').value=document.getElementById('emo-s').value=lp[t].mo; ce(); }
+function ce(){
+  const P=+document.getElementById('ep-s').value, r=+document.getElementById('er-s').value/100/12;
+  const yr=+document.getElementById('eyr-s').value, mo=+document.getElementById('emo-s').value, n=yr*12+mo;
+  if(n===0||P<100){
+    document.getElementById('e-emi').textContent='₹0';
+    document.getElementById('e-p').textContent='₹0';
+    document.getElementById('e-int').textContent='₹0';
+    document.getElementById('e-tot').textContent='₹0';
+    document.getElementById('e-tbody').innerHTML='';
+    return;
+  }
+  let emi, tot, int;
+  if(r===0){
+    // zero interest — simple division
+    emi = P/n; tot = P; int = 0;
+  } else {
+    const pow = Math.pow(1+r,n);
+    emi = P*r*pow/(pow-1); tot = emi*n; int = tot-P;
+  }
+  document.getElementById('e-emi').textContent=fmt(emi);
+  document.getElementById('e-p').textContent=fmt(P);
+  document.getElementById('e-int').textContent=fmt(int);
+  document.getElementById('e-tot').textContent=fmt(tot);
+  pie('ep-arc','ei-arc',P,Math.max(int,0));
+  const tb=document.getElementById('e-tbody'); tb.innerHTML='';
+  if(emiMode==='yr'){
+    let bal=P,mo2=0,y=1;
+    while(mo2<n){ let yp=0,yi=0,mty=Math.min(12,n-mo2);
+      for(let m=0;m<mty;m++){if(bal<=0.01)break;const ip=bal*r,pp=Math.min(emi-ip,bal);yi+=ip;yp+=pp;bal-=pp;}
+      mo2+=mty; const lbl=mty<12?`Year ${y} (${mty} mo)`:`Year ${y}`;
+      tb.innerHTML+=`<tr><td>${lbl}</td><td class="tg">${fmt(yp)}</td><td class="tr">${fmt(yi)}</td><td>${fmt(emi*mty)}</td><td class="tb">${fmt(Math.max(0,bal))}</td></tr>`;y++;}
+  } else {
+    let bal=P;
+    for(let m=1;m<=n;m++){if(bal<=0.01)break;const ip=bal*r,pp=Math.min(emi-ip,bal);bal-=pp;
+      const d=new Date();d.setMonth(d.getMonth()+m-1);
+      tb.innerHTML+=`<tr><td>${d.toLocaleString('default',{month:'short',year:'numeric'})}</td><td class="tg">${fmt(pp)}</td><td class="tr">${fmt(ip)}</td><td>${fmt(emi)}</td><td class="tb">${fmt(Math.max(0,bal))}</td></tr>`;}
+  }
+}
+ce();
+
+// SIP
+function cs(){
+  const M=+document.getElementById('sa-s').value,r=+document.getElementById('sr-s').value/100/12;
+  const yr=+document.getElementById('st-s').value,su=+document.getElementById('ss-s').value/100;
+  let inv=0,corpus=0,monthly=M;
+  for(let y=0;y<yr;y++){for(let m=0;m<12;m++){inv+=monthly;corpus=(corpus+monthly)*(1+r);}monthly*=(1+su);}
+  const ret=corpus-inv;
+  document.getElementById('s-tot').textContent=fmtC(corpus);
+  document.getElementById('s-inv').textContent=fmt(inv);
+  document.getElementById('s-ret').textContent=fmt(ret);
+  document.getElementById('s-mul').textContent=(corpus/inv).toFixed(2)+'x';
+  pie('si-arc','sr-arc',inv,ret);
+  let ci=0,val=0,mon=M; const tb=document.getElementById('s-tbody');tb.innerHTML='';
+  for(let y=1;y<=yr;y++){let yi=0;for(let m=0;m<12;m++){yi+=mon;ci+=mon;val=(val+mon)*(1+r);}mon*=(1+su);
+    tb.innerHTML+=`<tr><td>Year ${y}</td><td>${fmt(yi)}</td><td>${fmt(ci)}</td><td class="tb">${fmtC(val)}</td><td class="tg">${fmt(val-ci)}</td></tr>`;}}
+cs();
+
+// FD
+let fdc=4;
+function setFDC(n,el){document.querySelectorAll('#tab-fd .chip').forEach(b=>b.classList.remove('active'));el.classList.add('active');fdc=n;cf();}
+function cf(){
+  const P=+document.getElementById('fp-s').value,r=+document.getElementById('fr-s').value/100,t=+document.getElementById('ft-s').value;
+  const A=P*Math.pow(1+r/fdc,fdc*t),int=A-P,eff=(Math.pow(1+r/fdc,fdc)-1)*100;
+  document.getElementById('f-mat').textContent=fmt(A);document.getElementById('f-p').textContent=fmt(P);
+  document.getElementById('f-int').textContent=fmt(int);document.getElementById('f-yld').textContent=eff.toFixed(2)+'% p.a.';
+  pie('fp-arc','fi-arc',P,int);
+  const tb=document.getElementById('f-tbody');tb.innerHTML='';
+  for(let y=1;y<=t;y++){const op=P*Math.pow(1+r/fdc,fdc*(y-1)),cl=P*Math.pow(1+r/fdc,fdc*y);
+    tb.innerHTML+=`<tr><td>Year ${y}</td><td>${fmt(op)}</td><td class="tg">${fmt(cl-op)}</td><td class="tb">${fmt(cl)}</td></tr>`;}}
+cf();
+
+// RD
+function cr(){
+  const M=+document.getElementById('ra-s').value,mr=+document.getElementById('rr-s').value/100/12,yr=+document.getElementById('rt-s').value;
+  let bal=0;for(let i=0;i<yr*12;i++)bal=(bal+M)*(1+mr);
+  const dep=M*yr*12,ret=bal-dep,eff=(ret/dep/yr)*100;
+  document.getElementById('r-mat').textContent=fmt(bal);document.getElementById('r-inv').textContent=fmt(dep);
+  document.getElementById('r-int').textContent=fmt(ret);document.getElementById('r-eff').textContent=eff.toFixed(2)+'% p.a.';
+  pie('ri-arc','rr-arc',dep,ret);
+  let cd=0,val=0;const tb=document.getElementById('r-tbody');tb.innerHTML='';
+  for(let y=1;y<=yr;y++){let yd=0;for(let m=0;m<12;m++){yd+=M;cd+=M;val=(val+M)*(1+mr);}
+    tb.innerHTML+=`<tr><td>Year ${y}</td><td>${fmt(yd)}</td><td>${fmt(cd)}</td><td class="tg">${fmt(val-cd)}</td><td class="tb">${fmt(val)}</td></tr>`;}}
+cr();
+
+// LUMPSUM
+function cl(){
+  const P=+document.getElementById('la-s').value,r=+document.getElementById('lr-s').value/100;
+  const t=+document.getElementById('lt-s').value,inf=+document.getElementById('li-s').value/100;
+  const fv=P*Math.pow(1+r,t),g=fv-P,rl=fv/Math.pow(1+inf,t);
+  document.getElementById('l-fv').textContent=fmtC(fv);document.getElementById('l-p').textContent=fmt(P);
+  document.getElementById('l-g').textContent=fmt(g);document.getElementById('l-rl').textContent=fmtC(rl);
+  document.getElementById('l-ml').textContent=(fv/P).toFixed(2)+'x';
+  pie('lp-arc','lg-arc',P,g);
+  const tb=document.getElementById('l-tbody');tb.innerHTML='';
+  for(let y=1;y<=t;y++){const n=P*Math.pow(1+r,y),rl2=n/Math.pow(1+inf,y);
+    tb.innerHTML+=`<tr><td>Year ${y}</td><td class="tb">${fmtC(n)}</td><td class="tg">${fmtC(rl2)}</td><td>${fmt(n-P)}</td></tr>`;}}
+cl();
+
+// COMPARE MODE
+let cmpMode = 'invest';
+function setCmpMode(mode, el) {
+  el.closest('.toggle-pill').querySelectorAll('.pill-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  cmpMode = mode;
+  document.getElementById('cmp-invest-section').style.display = mode==='invest'?'block':'none';
+  document.getElementById('cmp-loan-section').style.display   = mode==='loan'?'block':'none';
+  if(mode==='invest') cmp(); else cmpLoan();
+}
+
+// INVESTMENT COMPARE
+function cmp(){
+  const P=+document.getElementById('ca-s').value,T=+document.getElementById('ct-s').value;
+  const sm=P/(T*12),sr=12/100/12;let sc=0;for(let m=0;m<T*12;m++)sc=(sc+sm)*(1+sr);
+  const fdA=P*Math.pow(1+7/100/4,4*T),rm=P/(T*12),rr=6.5/100/12;
+  let rb=0;for(let i=0;i<T*12;i++)rb=(rb+rm)*(1+rr);
+  const opts=[
+    {icon:'📈',name:'SIP Equity MF',rate:'~12%',inv:sm*T*12,val:sc,note:'Monthly ₹'+Math.round(sm).toLocaleString('en-IN')},
+    {icon:'💎',name:'Lumpsum Equity',rate:'~12%',inv:P,val:P*Math.pow(1.12,T),note:'One-time invest'},
+    {icon:'🏦',name:'Fixed Deposit',rate:'7%',inv:P,val:fdA,note:'Quarterly comp.'},
+    {icon:'💰',name:'Recurring Deposit',rate:'6.5%',inv:rm*T*12,val:rb,note:'Monthly ₹'+Math.round(rm).toLocaleString('en-IN')},
+    {icon:'📊',name:'Lumpsum Debt MF',rate:'~7%',inv:P,val:P*Math.pow(1.07,T),note:'Debt fund'},
+    {icon:'🏛️',name:'PPF',rate:'7.1%',inv:P,val:P*Math.pow(1.071,T),note:'Govt. backed'},
+  ];
+  const mx=Math.max(...opts.map(o=>o.val));opts.sort((a,b)=>b.val-a.val);
+  document.getElementById('cmp-grid').innerHTML=opts.map(o=>`<div class="cmp-card${o.val===mx?' winner':''}">
+    <div class="cmp-icon">${o.icon}</div><div class="cmp-name">${o.name}</div>
+    <div class="cmp-amt">${fmtC(o.val)}</div><div class="cmp-note">${o.note}</div>
+    ${o.val===mx?'<div class="win-tag">🏆 Best Returns</div>':''}</div>`).join('');
+  document.getElementById('cmp-tbody').innerHTML=opts.map(o=>`<tr><td>${o.icon} ${o.name}</td><td>${fmt(o.inv)}</td>
+    <td class="tg">${fmt(o.val-o.inv)}</td><td class="tb">${fmtC(o.val)}</td><td>${o.rate} p.a.</td></tr>`).join('');
+}
+
+// LOAN COMPARE
+const loanTypes = [
+  { icon:'🏠', name:'Home Loan',     rate:8.5,  color:'#0057d9', bg:'#eef3ff' },
+  { icon:'🚗', name:'Car Loan',      rate:9.0,  color:'#00b386', bg:'#e6f9f4' },
+  { icon:'👤', name:'Personal Loan', rate:14.0, color:'#e8645a', bg:'#fff0ee' },
+];
+
+function calcEMIval(P,r,n){
+  if(P<=0||n<=0) return 0;
+  const mr=r/100/12;
+  if(mr===0) return P/n;
+  const pow=Math.pow(1+mr,n);
+  return P*mr*pow/(pow-1);
+}
+
+function cmpLoan(){
+  const P = +document.getElementById('cl-p-s').value;
+  const T = +document.getElementById('cl-t-s').value;
+  const n = T * 12;
+
+  const results = loanTypes.map(l => {
+    const emi   = calcEMIval(P, l.rate, n);
+    const total = emi * n;
+    const interest = total - P;
+    return { ...l, emi, total, interest, intPct: (interest/total*100) };
+  });
+
+  const minEMI = Math.min(...results.map(r=>r.emi));
+
+  // Cards
+  document.getElementById('loan-cmp-cards').innerHTML = results.map(r => `
+    <div class="cmp-card${r.emi===minEMI?' winner':''}" style="${r.emi===minEMI?'border-color:'+r.color+';background:'+r.bg:''}">
+      <div class="cmp-icon">${r.icon}</div>
+      <div class="cmp-name">${r.name}</div>
+      <div class="cmp-amt" style="color:${r.color}">₹${Math.round(r.emi).toLocaleString('en-IN')}<span style="font-size:0.7rem;font-weight:500;color:var(--text2)">/mo</span></div>
+      <div class="cmp-note">@ ${r.rate}% p.a.</div>
+      <div class="cmp-note" style="margin-top:4px">Interest: ${fmt(r.interest)}</div>
+      ${r.emi===minEMI?'<div class="win-tag" style="background:'+r.color+'">💰 Lowest EMI</div>':''}
+    </div>`).join('');
+
+  // Summary table
+  document.getElementById('loan-cmp-tbody').innerHTML = results.map(r => `
+    <tr>
+      <td><span style="display:inline-flex;align-items:center;gap:6px">${r.icon} ${r.name}</span></td>
+      <td><span style="color:${r.color};font-weight:700">${r.rate}%</span></td>
+      <td class="tb">₹${Math.round(r.emi).toLocaleString('en-IN')}</td>
+      <td class="tr">${fmt(r.interest)}</td>
+      <td style="font-weight:600">${fmt(r.total)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;background:var(--border);border-radius:3px;height:6px;overflow:hidden">
+            <div style="width:${r.intPct.toFixed(1)}%;height:100%;background:${r.color};border-radius:3px"></div>
+          </div>
+          <span style="font-size:0.75rem;white-space:nowrap;color:var(--text2)">${r.intPct.toFixed(1)}%</span>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  // Year-wise outflow table
+  const ytbody = document.getElementById('loan-cmp-year-tbody');
+  ytbody.innerHTML = '';
+  // build balance arrays
+  const bals = loanTypes.map(l => ({ bal: P, mr: l.rate/100/12, emi: calcEMIval(P, l.rate, n) }));
+  for(let y=1;y<=T;y++){
+    const ints = bals.map(b => {
+      let yi=0;
+      for(let m=0;m<12;m++){ const ip=b.bal*b.mr, pp=Math.min(b.emi-ip,b.bal); yi+=ip; b.bal=Math.max(0,b.bal-pp); }
+      return yi;
+    });
+    const minInt = Math.min(...ints);
+    const cheapIdx = ints.indexOf(minInt);
+    ytbody.innerHTML += `<tr>
+      <td>Year ${y}</td>
+      <td style="color:#0057d9;font-weight:600">${fmt(ints[0])}</td>
+      <td style="color:#00b386;font-weight:600">${fmt(ints[1])}</td>
+      <td style="color:#e8645a;font-weight:600">${fmt(ints[2])}</td>
+      <td><span class="price-tag tag-profit">${loanTypes[cheapIdx].icon} ${loanTypes[cheapIdx].name.split(' ')[0]}</span></td>
+    </tr>`;
+  }
+}
+
+// PWA iOS hint
+if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.navigator.standalone)
+  setTimeout(()=>{document.getElementById('pwa-banner').style.display='flex';},2500);
+
+// ── STOCK AVERAGE CALCULATOR ──
+let avgType = 'stock';
+let avgRowCount = 0;
+
+const avgLabels = {
+  stock: { qty: 'Shares', price: 'Buy Price (₹)', unit: 'shares' },
+  mf:    { qty: 'Units',  price: 'NAV (₹)',       unit: 'units'  },
+  crypto:{ qty: 'Coins',  price: 'Buy Price (₹)', unit: 'coins'  }
+};
+
+function setAvgType(t, el) {
+  document.querySelectorAll('#tab-avg .chip').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  avgType = t;
+  calcAvg();
+}
+
+function addAvgRow(qty='', price='') {
+  avgRowCount++;
+  const n = avgRowCount;
+  const div = document.createElement('div');
+  div.className = 'buy-row';
+  div.id = 'avg-row-' + n;
+  div.innerHTML = `
+    <div class="buy-num">${n}</div>
+    <div class="inp-wrap">
+      <input class="inp" type="number" id="avg-qty-${n}" value="${qty}" min="0" placeholder="0" oninput="calcAvg()" style="text-align:center">
+    </div>
+    <div class="inp-wrap">
+      <span class="inp-pfx">₹</span>
+      <input class="inp" type="number" id="avg-price-${n}" value="${price}" min="0" placeholder="0.00" step="0.01" oninput="calcAvg()">
+    </div>
+    <button class="del-btn" onclick="removeAvgRow(${n})" title="Remove">×</button>`;
+  document.getElementById('avg-rows').appendChild(div);
+  calcAvg();
+}
+
+function removeAvgRow(n) {
+  const el = document.getElementById('avg-row-' + n);
+  if(el) el.remove();
+  // Re-number visible rows
+  const rows = document.querySelectorAll('#avg-rows .buy-row');
+  rows.forEach((r, i) => { const num = r.querySelector('.buy-num'); if(num) num.textContent = i+1; });
+  calcAvg();
+}
+
+function getAvgRows() {
+  return [...document.querySelectorAll('#avg-rows .buy-row')].map(row => {
+    const id = row.id.replace('avg-row-','');
+    const q = parseFloat(document.getElementById('avg-qty-'+id)?.value) || 0;
+    const p = parseFloat(document.getElementById('avg-price-'+id)?.value) || 0;
+    return { id, qty: q, price: p, inv: q * p };
+  }).filter(r => r.qty > 0 && r.price > 0);
+}
+
+function calcAvg() {
+  const rows = getAvgRows();
+  const cmp = parseFloat(document.getElementById('avg-cmp')?.value) || 0;
+  const resDiv = document.getElementById('avg-results');
+  const tbody = document.getElementById('avg-tbody');
+  const tfoot = document.getElementById('avg-tfoot');
+  const totalTag = document.getElementById('avg-total-tag');
+  const lbl = avgLabels[avgType];
+
+  if(rows.length === 0) {
+    resDiv.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text3)">
+      <div style="font-size:2.5rem;margin-bottom:12px">📊</div>
+      <div style="font-size:0.9rem;font-weight:500">Add buy entries to see your average cost</div></div>`;
+    tbody.innerHTML = '';
+    tfoot.innerHTML = '';
+    totalTag.textContent = '';
+    return;
+  }
+
+  const totalQty = rows.reduce((s,r) => s+r.qty, 0);
+  const totalInv = rows.reduce((s,r) => s+r.inv, 0);
+  const avgPrice = totalInv / totalQty;
+
+  // P&L
+  const curVal = cmp > 0 ? totalQty * cmp : 0;
+  const pnl = curVal - totalInv;
+  const pnlPct = totalInv > 0 ? (pnl / totalInv) * 100 : 0;
+  const isProfit = pnl >= 0;
+
+  // Results card
+  resDiv.innerHTML = `
+    <div class="avg-stat" style="background:var(--green-lt);margin-bottom:14px">
+      <div class="avg-stat-lbl">Average Buy Price</div>
+      <div class="avg-stat-val big">₹${avgPrice.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="avg-stat">
+        <div class="avg-stat-lbl">Total ${lbl.unit}</div>
+        <div class="avg-stat-val">${totalQty.toLocaleString('en-IN',{maximumFractionDigits:4})}</div>
+      </div>
+      <div class="avg-stat">
+        <div class="avg-stat-lbl">Total Invested</div>
+        <div class="avg-stat-val">${fmt(totalInv)}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="avg-stat">
+        <div class="avg-stat-lbl">No. of Buys</div>
+        <div class="avg-stat-val">${rows.length}</div>
+      </div>
+      <div class="avg-stat">
+        <div class="avg-stat-lbl">Break-even Price</div>
+        <div class="avg-stat-val">₹${avgPrice.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      </div>
+    </div>
+    ${cmp > 0 ? `
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:.83rem;color:var(--text2);font-weight:600">Current Value</span>
+        <span style="font-size:1rem;font-weight:700">${fmt(curVal)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:.83rem;color:var(--text2);font-weight:600">P&amp;L</span>
+        <span style="font-size:1rem;font-weight:700;color:${isProfit?'var(--green)':'var(--red)'}">${isProfit?'+':''}${fmt(pnl)} (${isProfit?'+':''}${pnlPct.toFixed(2)}%)</span>
+      </div>
+      <div class="avg-bar-wrap"><div class="avg-bar" style="width:${Math.min(Math.abs(pnlPct),100)}%;background:${isProfit?'var(--green)':'var(--red)'}"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.7rem;color:var(--text3)">
+        <span>Cost: ₹${avgPrice.toFixed(2)}</span><span>CMP: ₹${cmp.toLocaleString('en-IN',{minimumFractionDigits:2})}</span>
+      </div>
+    </div>` : `<div style="padding:12px;background:var(--bg);border-radius:8px;font-size:0.8rem;color:var(--text3);text-align:center">Enter CMP to see P&L</div>`}`;
+
+  // Table
+  tbody.innerHTML = rows.map((r, i) => {
+    const rowPnl = cmp > 0 ? (cmp - r.price) * r.qty : null;
+    const rowPct = cmp > 0 ? ((cmp - r.price) / r.price) * 100 : null;
+    const invPct = (r.inv / totalInv) * 100;
+    return `<tr>
+      <td><span class="buy-num" style="display:inline-flex">${i+1}</span></td>
+      <td>${r.qty.toLocaleString('en-IN',{maximumFractionDigits:4})}</td>
+      <td>₹${r.price.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td>${fmt(r.inv)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;background:var(--border);border-radius:3px;height:5px;overflow:hidden">
+            <div style="width:${invPct.toFixed(1)}%;height:100%;background:var(--green);border-radius:3px"></div>
+          </div>
+          <span style="font-size:0.75rem;color:var(--text2);white-space:nowrap">${invPct.toFixed(1)}%</span>
+        </div>
+      </td>
+      <td>${rowPnl !== null
+        ? `<span class="price-tag ${rowPnl>=0?'tag-profit':'tag-loss'}">${rowPnl>=0?'+':''}${fmt(rowPnl)} (${rowPct>=0?'+':''}${rowPct.toFixed(1)}%)</span>`
+        : '<span style="color:var(--text3);font-size:.78rem">—</span>'
+      }</td>
+    </tr>`;
+  }).join('');
+
+  // Footer totals
+  const totalPnl = cmp > 0 ? (cmp * totalQty) - totalInv : null;
+  tfoot.innerHTML = `<tr style="background:#f9fafb;font-weight:700;border-top:2px solid var(--border)">
+    <td style="font-weight:700;color:var(--text)">Total</td>
+    <td style="font-weight:700;color:var(--text)">${totalQty.toLocaleString('en-IN',{maximumFractionDigits:4})}</td>
+    <td style="font-weight:700;color:var(--green)">Avg ₹${avgPrice.toFixed(2)}</td>
+    <td style="font-weight:700;color:var(--text)">${fmt(totalInv)}</td>
+    <td>100%</td>
+    <td>${totalPnl !== null
+      ? `<span class="price-tag ${totalPnl>=0?'tag-profit':'tag-loss'}">${totalPnl>=0?'+':''}${fmt(totalPnl)}</span>`
+      : '—'}</td>
+  </tr>`;
+
+  totalTag.textContent = `${rows.length} buy${rows.length>1?'s':''} · ${totalQty.toLocaleString('en-IN',{maximumFractionDigits:4})} ${lbl.unit}`;
+}
+
+// Init with 3 rows
+addAvgRow(10, 150);
+addAvgRow(15, 130);
+addAvgRow(20, 110);
+
+// ── SERVICE WORKER ──
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
