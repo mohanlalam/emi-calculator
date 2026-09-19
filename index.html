@@ -492,67 +492,135 @@ input, button, select, textarea {
   -moz-appearance: textfield;
 }
 
-/* SLIDERS */
+/* ══════════════ PREMIUM SLIDERS ══════════════ */
 .sl-wrap {
-  margin-top: 10px;
+  margin-top: 14px;
+  position: relative;
+  padding: 4px 0 2px;
 }
 
+/* The range track */
 input[type=range] {
   width: 100%;
   height: 6px;
   -webkit-appearance: none;
   appearance: none;
   background: var(--slider-track);
-  border-radius: 3px;
+  border-radius: 100px;
   outline: none;
   cursor: pointer;
-  transition: background 0.2s ease;
+  display: block;
+  /* fill is set dynamically via JS */
 }
 
+/* WebKit thumb */
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--green);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 179, 134, 0.4);
-  border: 3px solid #ffffff;
-  transition: transform 0.1s ease, box-shadow 0.15s ease;
+  background: linear-gradient(135deg, #00d9a3, #00b386);
+  cursor: grab;
+  box-shadow: 0 0 0 4px rgba(0, 179, 134, 0.15), 0 2px 8px rgba(0, 179, 134, 0.45);
+  border: 2.5px solid #ffffff;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.15s ease;
 }
 
 input[type=range]::-webkit-slider-thumb:hover {
-  box-shadow: 0 3px 12px rgba(0, 179, 134, 0.55);
+  box-shadow: 0 0 0 6px rgba(0, 179, 134, 0.18), 0 3px 14px rgba(0, 179, 134, 0.55);
+  transform: scale(1.12);
 }
 
+input[type=range]:active::-webkit-slider-thumb,
 input[type=range]::-webkit-slider-thumb:active {
-  transform: scale(1.2);
+  cursor: grabbing;
+  transform: scale(1.22);
+  box-shadow: 0 0 0 8px rgba(0, 179, 134, 0.14), 0 4px 18px rgba(0, 179, 134, 0.55);
 }
 
-input[type=range]::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--green);
-  border: 3px solid #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 179, 134, 0.4);
-  cursor: pointer;
-}
-
-input[type=range]::-moz-range-progress {
-  background: var(--green);
-  border-radius: 3px;
+/* WebKit track */
+input[type=range]::-webkit-slider-runnable-track {
   height: 6px;
+  border-radius: 100px;
+}
+
+/* Firefox thumb */
+input[type=range]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00d9a3, #00b386);
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 0 0 4px rgba(0, 179, 134, 0.15), 0 2px 8px rgba(0, 179, 134, 0.45);
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type=range]::-moz-range-thumb:hover {
+  transform: scale(1.12);
+}
+
+/* Firefox filled track */
+input[type=range]::-moz-range-progress {
+  background: linear-gradient(90deg, #00d9a3, #00b386);
+  border-radius: 100px;
+  height: 6px;
+}
+
+input[type=range]::-moz-range-track {
+  background: var(--slider-track);
+  border-radius: 100px;
+  height: 6px;
+}
+
+/* Slider tooltip (value bubble) */
+.sl-tooltip {
+  position: absolute;
+  top: -30px;
+  transform: translateX(-50%);
+  background: var(--green);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0,179,134,0.35);
+  letter-spacing: 0.1px;
+  z-index: 10;
+}
+
+.sl-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--green);
+}
+
+.sl-wrap:focus-within .sl-tooltip,
+.sl-wrap.dragging .sl-tooltip {
+  opacity: 1;
 }
 
 .sl-lbl {
   display: flex;
   justify-content: space-between;
-  margin-top: 6px;
-  font-size: 0.7rem;
-  font-weight: 500;
+  margin-top: 8px;
+  font-size: 0.69rem;
+  font-weight: 600;
   color: var(--text3);
   padding: 0 2px;
+  letter-spacing: 0.1px;
 }
 
 /* RESULTS & METRICS */
@@ -2437,10 +2505,75 @@ tbody td:first-child {
 const fmt = n => '₹' + (n > 0 && n < 1 ? n.toFixed(2) : Math.round(n).toLocaleString('en-IN'));
 const fmtC = n => n >= 1e7 ? '₹' + (n/1e7).toFixed(2) + ' Cr' : n >= 1e5 ? '₹' + (n/1e5).toFixed(2) + ' L' : fmt(n);
 
+// ── Slider fill & tooltip engine ──────────────────────────────
+function updateSliderFill(sl) {
+  if (!sl) return;
+  const min = parseFloat(sl.min) || 0;
+  const max = parseFloat(sl.max) || 100;
+  const val = parseFloat(sl.value) || 0;
+  const pct = ((val - min) / (max - min)) * 100;
+  sl.style.background = `linear-gradient(90deg, #00b386 ${pct}%, var(--slider-track) ${pct}%)`;
+
+  // Update tooltip
+  const wrap = sl.closest('.sl-wrap');
+  if (!wrap) return;
+  let tip = wrap.querySelector('.sl-tooltip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.className = 'sl-tooltip';
+    wrap.insertBefore(tip, sl);
+  }
+  // Format the tooltip label
+  tip.textContent = formatSliderVal(sl, val);
+  // Position tooltip above thumb (account for thumb width ~11px)
+  const thumbPct = pct / 100;
+  const trackW = sl.offsetWidth || sl.getBoundingClientRect().width;
+  const thumbRadius = 11;
+  const pos = thumbPct * (trackW - thumbRadius * 2) + thumbRadius;
+  tip.style.left = pos + 'px';
+}
+
+function formatSliderVal(sl, val) {
+  const id = sl.id || '';
+  // Detect currency sliders by prefix element
+  const wrap = sl.closest('.field, div');
+  const pfx = wrap && wrap.querySelector('.inp-pfx');
+  if (pfx && pfx.textContent.includes('₹')) {
+    if (val >= 1e7) return '₹' + (val/1e7).toFixed(1) + ' Cr';
+    if (val >= 1e5) return '₹' + (val/1e5).toFixed(1) + ' L';
+    if (val >= 1000) return '₹' + (val/1000).toFixed(0) + 'K';
+    return '₹' + val;
+  }
+  // % sliders
+  const sfx = wrap && wrap.querySelector('.inp-sfx');
+  if (sfx) {
+    const unit = sfx.textContent.trim();
+    return val + ' ' + unit;
+  }
+  return val;
+}
+
+function initAllSliders() {
+  document.querySelectorAll('input[type=range]').forEach(sl => {
+    updateSliderFill(sl);
+
+    // Show tooltip on drag
+    sl.addEventListener('mousedown', () => sl.closest('.sl-wrap')?.classList.add('dragging'));
+    sl.addEventListener('touchstart', () => sl.closest('.sl-wrap')?.classList.add('dragging'), {passive:true});
+    sl.addEventListener('mouseup', () => sl.closest('.sl-wrap')?.classList.remove('dragging'));
+    sl.addEventListener('touchend', () => sl.closest('.sl-wrap')?.classList.remove('dragging'));
+
+    sl.addEventListener('input', () => updateSliderFill(sl));
+  });
+}
+
 // Sync input & sliders
 function i2s(sId, iId) {
   const s = document.getElementById(sId), i = document.getElementById(iId);
-  if (s && i) i.value = s.value;
+  if (s && i) {
+    i.value = s.value;
+    updateSliderFill(s);
+  }
   savePreferences();
 }
 function s2i(iId, sId, mn, mx) {
@@ -2449,6 +2582,7 @@ function s2i(iId, sId, mn, mx) {
   let v = parseFloat(i.value);
   if (isNaN(v)) return;
   s.value = Math.min(Math.max(v, mn), mx);
+  updateSliderFill(s);
   savePreferences();
 }
 
@@ -3647,6 +3781,8 @@ function setTheme(theme) {
     if (meta) meta.setAttribute('content', '#00b386');
   }
   localStorage.setItem('emi_theme', theme);
+  // Refresh slider fills after theme change (track color changes)
+  setTimeout(() => document.querySelectorAll('input[type=range]').forEach(sl => updateSliderFill(sl)), 50);
 }
 
 // ─── IOS INSTALL GUIDE MODAL ───
@@ -3724,6 +3860,13 @@ cr();
 cl();
 cmp();
 cmpLoan();
+
+// Initialize slider fills & tooltips (run after DOM + calcs are ready)
+initAllSliders();
+// Re-run fills whenever window resizes (tooltip positioning)
+window.addEventListener('resize', () => {
+  document.querySelectorAll('input[type=range]').forEach(sl => updateSliderFill(sl));
+});
 
 // ─── SERVICE WORKER REGISTRATION & AUTO-UPDATE ───
 let newWorkerWaiting = null;
