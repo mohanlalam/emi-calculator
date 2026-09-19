@@ -1598,11 +1598,11 @@ tbody td:first-child {
         </div>
         <div class="inp-wrap">
           <span class="inp-pfx">₹</span>
-          <input class="inp" type="number" id="ep-i" value="5000000" min="1000" max="100000000" oninput="s2i('ep-i','ep-s',1000,1e8);ce()">
+          <input class="inp" type="number" id="ep-i" value="5000000" min="100" max="100000000" oninput="s2i('ep-i','ep-s',100,1e8);ce()">
         </div>
         <div class="sl-wrap">
-          <input type="range" id="ep-s" min="100000" max="100000000" step="50000" value="5000000" oninput="i2s('ep-s','ep-i');ce()">
-          <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Crore</span></div>
+          <input type="range" id="ep-s" min="100" max="100000000" step="100" value="5000000" oninput="i2s('ep-s','ep-i');ce()">
+          <div class="sl-lbl"><span>₹100</span><span>₹10 Crore</span></div>
         </div>
       </div>
 
@@ -1935,11 +1935,11 @@ tbody td:first-child {
           <label class="field-lbl">Loan Amount</label>
           <div class="inp-wrap">
             <span class="inp-pfx">₹</span>
-            <input class="inp" type="number" id="cl-p-i" value="3000000" min="1000" max="100000000" oninput="s2i('cl-p-i','cl-p-s',1000,1e8);cmpLoan()">
+            <input class="inp" type="number" id="cl-p-i" value="3000000" min="100" max="100000000" oninput="s2i('cl-p-i','cl-p-s',100,1e8);cmpLoan()">
           </div>
           <div class="sl-wrap">
-            <input type="range" id="cl-p-s" min="100000" max="100000000" step="50000" value="3000000" oninput="i2s('cl-p-s','cl-p-i');cmpLoan()">
-            <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Cr</span></div>
+            <input type="range" id="cl-p-s" min="100" max="100000000" step="100" value="3000000" oninput="i2s('cl-p-s','cl-p-i');cmpLoan()">
+            <div class="sl-lbl"><span>₹100</span><span>₹10 Cr</span></div>
           </div>
         </div>
 
@@ -2434,7 +2434,7 @@ tbody td:first-child {
 <!-- ══════════════ JAVASCRIPT LOGIC ══════════════ -->
 <script>
 // Formatters
-const fmt = n => '₹' + Math.round(n).toLocaleString('en-IN');
+const fmt = n => '₹' + (n > 0 && n < 1 ? n.toFixed(2) : Math.round(n).toLocaleString('en-IN'));
 const fmtC = n => n >= 1e7 ? '₹' + (n/1e7).toFixed(2) + ' Cr' : n >= 1e5 ? '₹' + (n/1e5).toFixed(2) + ' L' : fmt(n);
 
 // Sync input & sliders
@@ -2589,11 +2589,11 @@ function setLoan(type, el) {
 }
 
 function ce() {
-  const P = +document.getElementById('ep-s').value;
-  const annualRate = +document.getElementById('er-s').value;
+  const P = document.getElementById('ep-i') ? +document.getElementById('ep-i').value : +document.getElementById('ep-s').value;
+  const annualRate = document.getElementById('er-i') ? +document.getElementById('er-i').value : +document.getElementById('er-s').value;
   const r = annualRate / 100 / 12;
-  const yr = +document.getElementById('eyr-s').value;
-  const mo = +document.getElementById('emo-s').value;
+  const yr = document.getElementById('eyr-i') ? +document.getElementById('eyr-i').value : +document.getElementById('eyr-s').value;
+  const mo = document.getElementById('emo-i') ? +document.getElementById('emo-i').value : +document.getElementById('emo-s').value;
   const n = yr * 12 + mo;
 
   const extraMonthly = parseFloat(document.getElementById('prepay-monthly')?.value) || 0;
@@ -2701,6 +2701,8 @@ function ce() {
       y++;
     }
   } else {
+    const baseDate = new Date();
+    baseDate.setDate(1);
     for (let m = 1; m <= n; m++) {
       if (bal <= 0.01) break;
       const ip = bal * r;
@@ -2708,8 +2710,7 @@ function ce() {
       if (m % 12 === 0) pmt += extraYearly;
       const pp = Math.min(pmt - ip, bal);
       bal -= pp;
-      const d = new Date();
-      d.setMonth(d.getMonth() + m - 1);
+      const d = new Date(baseDate.getFullYear(), baseDate.getMonth() + m - 1, 1);
       const dStr = d.toLocaleString('default', { month: 'short', year: 'numeric' });
       tb.innerHTML += `<tr>
         <td>${dStr}</td>
@@ -2725,10 +2726,10 @@ function ce() {
 
 // ─── SIP CALCULATOR ───
 function cs() {
-  const M = +document.getElementById('sa-s').value;
-  const r = +document.getElementById('sr-s').value / 100 / 12;
-  const yr = +document.getElementById('st-s').value;
-  const su = +document.getElementById('ss-s').value / 100;
+  const M = document.getElementById('sa-i') ? +document.getElementById('sa-i').value : +document.getElementById('sa-s').value;
+  const r = (document.getElementById('sr-i') ? +document.getElementById('sr-i').value : +document.getElementById('sr-s').value) / 100 / 12;
+  const yr = document.getElementById('st-i') ? +document.getElementById('st-i').value : +document.getElementById('st-s').value;
+  const su = (document.getElementById('ss-i') ? +document.getElementById('ss-i').value : +document.getElementById('ss-s').value) / 100;
 
   let inv = 0, corpus = 0, monthly = M;
   for (let y = 0; y < yr; y++) {
@@ -2742,7 +2743,7 @@ function cs() {
   document.getElementById('s-tot').textContent = fmtC(corpus);
   document.getElementById('s-inv').textContent = fmt(inv);
   document.getElementById('s-ret').textContent = fmt(ret);
-  document.getElementById('s-mul').textContent = (corpus / inv).toFixed(2) + 'x';
+  document.getElementById('s-mul').textContent = inv > 0 ? (corpus / inv).toFixed(2) + 'x' : '0.00x';
 
   const retPct = corpus > 0 ? ((ret / corpus) * 100).toFixed(0) : 0;
   document.getElementById('s-gain-pct').textContent = retPct + '%';
@@ -2779,9 +2780,9 @@ function setFDC(n, el) {
   cf();
 }
 function cf() {
-  const P = +document.getElementById('fp-s').value;
-  const r = +document.getElementById('fr-s').value / 100;
-  const t = +document.getElementById('ft-s').value;
+  const P = document.getElementById('fp-i') ? +document.getElementById('fp-i').value : +document.getElementById('fp-s').value;
+  const r = (document.getElementById('fr-i') ? +document.getElementById('fr-i').value : +document.getElementById('fr-s').value) / 100;
+  const t = document.getElementById('ft-i') ? +document.getElementById('ft-i').value : +document.getElementById('ft-s').value;
   const A = P * Math.pow(1 + r / fdc, fdc * t);
   const int = A - P;
   const eff = (Math.pow(1 + r / fdc, fdc) - 1) * 100;
@@ -2798,21 +2799,21 @@ function cf() {
 
 // ─── RECURRING DEPOSIT (RD) ───
 function cr() {
-  const M = +document.getElementById('ra-s').value;
-  const mr = +document.getElementById('rr-s').value / 100 / 12;
-  const yr = +document.getElementById('rt-s').value;
+  const M = document.getElementById('ra-i') ? +document.getElementById('ra-i').value : +document.getElementById('ra-s').value;
+  const mr = (document.getElementById('rr-i') ? +document.getElementById('rr-i').value : +document.getElementById('rr-s').value) / 100 / 12;
+  const yr = document.getElementById('rt-i') ? +document.getElementById('rt-i').value : +document.getElementById('rt-s').value;
   let bal = 0;
   for (let i = 0; i < yr * 12; i++) {
     bal = (bal + M) * (1 + mr);
   }
   const dep = M * yr * 12;
   const ret = bal - dep;
-  const eff = (ret / dep / yr) * 100;
+  const eff = dep > 0 && yr > 0 ? (ret / dep / yr) * 100 : 0;
 
   document.getElementById('r-mat').textContent = fmt(bal);
   document.getElementById('r-inv').textContent = fmt(dep);
   document.getElementById('r-int').textContent = fmt(ret);
-  document.getElementById('r-eff').textContent = eff.toFixed(2) + '% p.a.';
+  document.getElementById('r-eff').textContent = eff > 0 ? eff.toFixed(2) + '% p.a.' : '—';
   updateDonut('ri-arc', 'rr-arc', dep, ret);
   const intPctEl = document.getElementById('r-int-pct');
   if (intPctEl) intPctEl.textContent = bal > 0 ? ((ret / bal) * 100).toFixed(0) + '%' : '—';
@@ -2821,10 +2822,10 @@ function cr() {
 
 // ─── LUMPSUM ───
 function cl() {
-  const P = +document.getElementById('la-s').value;
-  const r = +document.getElementById('lr-s').value / 100;
-  const t = +document.getElementById('lt-s').value;
-  const inf = +document.getElementById('li-s').value / 100;
+  const P = document.getElementById('la-i') ? +document.getElementById('la-i').value : +document.getElementById('la-s').value;
+  const r = (document.getElementById('lr-i') ? +document.getElementById('lr-i').value : +document.getElementById('lr-s').value) / 100;
+  const t = document.getElementById('lt-i') ? +document.getElementById('lt-i').value : +document.getElementById('lt-s').value;
+  const inf = (document.getElementById('li-i') ? +document.getElementById('li-i').value : +document.getElementById('li-s').value) / 100;
   const fv = P * Math.pow(1 + r, t);
   const g = fv - P;
   const rl = fv / Math.pow(1 + inf, t);
@@ -2833,7 +2834,7 @@ function cl() {
   document.getElementById('l-p').textContent = fmt(P);
   document.getElementById('l-g').textContent = fmt(g);
   document.getElementById('l-rl').textContent = fmtC(rl);
-  document.getElementById('l-ml').textContent = (fv / P).toFixed(2) + 'x';
+  document.getElementById('l-ml').textContent = P > 0 ? (fv / P).toFixed(2) + 'x' : '0.00x';
   updateDonut('lp-arc', 'lg-arc', P, g);
   const gainPctEl = document.getElementById('l-gain-pct');
   if (gainPctEl) gainPctEl.textContent = fv > 0 ? ((g / fv) * 100).toFixed(0) + '%' : '—';
@@ -2842,8 +2843,9 @@ function cl() {
 
 // ─── COMPARE INVESTMENTS ───
 function cmp() {
-  const P = +document.getElementById('ca-s').value;
-  const T = +document.getElementById('ct-s').value;
+  const P = document.getElementById('ca-i') ? +document.getElementById('ca-i').value : +document.getElementById('ca-s').value;
+  const T = document.getElementById('ct-i') ? +document.getElementById('ct-i').value : +document.getElementById('ct-s').value;
+  if (P <= 0 || T <= 0) return;
   const sm = P / (T * 12), sr = 12 / 100 / 12;
   let sc = 0;
   for (let m = 0; m < T * 12; m++) sc = (sc + sm) * (1 + sr);
@@ -2900,9 +2902,17 @@ function calcEMIval(P, r, n) {
 }
 
 function cmpLoan() {
-  const P = +document.getElementById('cl-p-s').value;
-  const T = +document.getElementById('cl-t-s').value;
+  const P = document.getElementById('cl-p-i') ? +document.getElementById('cl-p-i').value : +document.getElementById('cl-p-s').value;
+  const T = document.getElementById('cl-t-i') ? +document.getElementById('cl-t-i').value : +document.getElementById('cl-t-s').value;
   const n = T * 12;
+
+  if (n === 0 || P < 100) {
+    document.getElementById('loan-cmp-cards').innerHTML = '<div style="color:var(--text3);padding:24px;text-align:center;grid-column:1/-1">Please enter a loan amount of at least ₹100 and valid tenure.</div>';
+    document.getElementById('loan-cmp-tbody').innerHTML = '';
+    const ytbody = document.getElementById('loan-cmp-year-tbody');
+    if (ytbody) ytbody.innerHTML = '';
+    return;
+  }
 
   const results = compareLoans.map(l => {
     const emi = calcEMIval(P, l.rate, n);
@@ -3427,52 +3437,73 @@ function copyTableToClipboard() {
     tsv += cells.join('\t') + '\n';
   }
 
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(tsv).then(() => {
-      showToast('Table copied! Paste directly into Excel (Ctrl+V)');
+  copyTextSafe(tsv, 'Table copied! Paste directly into Excel (Ctrl+V)');
+  closeExportModal();
+}
+
+function copyTextSafe(text, successMsg) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(successMsg);
     }).catch(() => {
-      showToast('Clipboard access denied');
+      execFallbackCopy(text, successMsg);
     });
   } else {
+    execFallbackCopy(text, successMsg);
+  }
+}
+
+function execFallbackCopy(text, successMsg) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '0';
+    ta.style.left = '-9999px';
+    ta.setAttribute('readonly', '');
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (ok) {
+      showToast(successMsg);
+    } else {
+      showToast('Clipboard access restricted');
+    }
+  } catch (err) {
     showToast('Clipboard not supported');
   }
-  closeExportModal();
 }
 
 function copySummaryText() {
   const activeTab = getActiveTabKey();
   let text = '';
   if (activeTab === 'emi') {
-    const p = document.getElementById('ep-i').value;
-    const r = document.getElementById('er-i').value;
-    const yr = document.getElementById('eyr-i').value;
-    const emi = document.getElementById('e-emi').textContent;
-    const int = document.getElementById('e-int').textContent;
-    const tot = document.getElementById('e-tot').textContent;
+    const p = document.getElementById('ep-i')?.value || '0';
+    const r = document.getElementById('er-i')?.value || '0';
+    const yr = document.getElementById('eyr-i')?.value || '0';
+    const emi = document.getElementById('e-emi')?.textContent || '';
+    const int = document.getElementById('e-int')?.textContent || '';
+    const tot = document.getElementById('e-tot')?.textContent || '';
     text = `🏠 Loan EMI Calculation Summary:\n• Loan Amount: ₹${(+p).toLocaleString('en-IN')}\n• Rate: ${r}% p.a.\n• Tenure: ${yr} Years\n• Monthly EMI: ${emi}\n• Total Interest: ${int}\n• Total Outflow: ${tot}\n\nCalculated with EMI & Finance Calculator`;
   } else if (activeTab === 'sip') {
-    const sa = document.getElementById('sa-i').value;
-    const sr = document.getElementById('sr-i').value;
-    const st = document.getElementById('st-i').value;
-    const inv = document.getElementById('s-inv').textContent;
-    const gain = document.getElementById('s-ret').textContent;
-    const tot = document.getElementById('s-tot').textContent;
+    const sa = document.getElementById('sa-i')?.value || '0';
+    const sr = document.getElementById('sr-i')?.value || '0';
+    const st = document.getElementById('st-i')?.value || '0';
+    const inv = document.getElementById('s-inv')?.textContent || '';
+    const gain = document.getElementById('s-ret')?.textContent || '';
+    const tot = document.getElementById('s-tot')?.textContent || '';
     text = `📈 SIP Investment Estimate:\n• Monthly: ₹${(+sa).toLocaleString('en-IN')}\n• Return: ${sr}% p.a.\n• Horizon: ${st} Years\n• Total Invested: ${inv}\n• Accrued Gains: ${gain}\n• Final Corpus: ${tot}\n\nCalculated with EMI & Finance Calculator`;
   } else if (activeTab === 'compare-loan') {
-    const p = document.getElementById('cl-p-i').value;
-    const t = document.getElementById('cl-t-i').value;
+    const p = document.getElementById('cl-p-i')?.value || '0';
+    const t = document.getElementById('cl-t-i')?.value || '0';
     text = `🏦 Loan Comparison Summary:\n• Principal: ₹${(+p).toLocaleString('en-IN')}\n• Tenure: ${t} Years\n• Comparing Home, Car & Personal Loans\n\nCalculated with EMI & Finance Calculator`;
   } else {
     text = `📊 Financial Calculation Report from EMI & Finance Calculator: ${window.location.href}`;
   }
 
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('Summary copied to clipboard!');
-    }).catch(() => {
-      showToast('Unable to copy');
-    });
-  }
+  copyTextSafe(text, 'Summary copied to clipboard!');
   closeExportModal();
 }
 
@@ -3567,18 +3598,18 @@ function shareCurrentCalc() {
   const activeTab = getActiveTabKey();
   let shareText = '';
   if (activeTab === 'emi') {
-    const p = document.getElementById('ep-i').value;
-    const r = document.getElementById('er-i').value;
-    const yr = document.getElementById('eyr-i').value;
-    const emi = document.getElementById('e-emi').textContent;
-    const int = document.getElementById('e-int').textContent;
-    shareText = `🏠 Loan EMI Calculation:\nLoan Amount: ₹${(+p).toLocaleString('en-IN')}\nRate: ${r}% p.a.\nTenure: ${yr} Years\n\nMonthly EMI: ${emi}\nTotal Interest: ${int}\n\nCalculated with EMI & Finance Hub`;
+    const p = document.getElementById('ep-i')?.value || '0';
+    const r = document.getElementById('er-i')?.value || '0';
+    const yr = document.getElementById('eyr-i')?.value || '0';
+    const emi = document.getElementById('e-emi')?.textContent || '';
+    const int = document.getElementById('e-int')?.textContent || '';
+    shareText = `🏠 Loan EMI Calculation:\nLoan Amount: ₹${(+p).toLocaleString('en-IN')}\nRate: ${r}% p.a.\nTenure: ${yr} Years\n\nMonthly EMI: ${emi}\nTotal Interest: ${int}\n\nCalculated with EMI & Finance Calculator`;
   } else if (activeTab === 'sip') {
-    const sa = document.getElementById('sa-i').value;
-    const sr = document.getElementById('sr-i').value;
-    const st = document.getElementById('st-i').value;
-    const tot = document.getElementById('s-tot').textContent;
-    shareText = `📈 SIP Investment Estimate:\nMonthly: ₹${(+sa).toLocaleString('en-IN')}\nExpected Return: ${sr}% p.a.\nTenure: ${st} Years\n\nTotal Corpus: ${tot}\n\nCalculated with EMI & Finance Hub`;
+    const sa = document.getElementById('sa-i')?.value || '0';
+    const sr = document.getElementById('sr-i')?.value || '0';
+    const st = document.getElementById('st-i')?.value || '0';
+    const tot = document.getElementById('s-tot')?.textContent || '';
+    shareText = `📈 SIP Investment Estimate:\nMonthly: ₹${(+sa).toLocaleString('en-IN')}\nExpected Return: ${sr}% p.a.\nTenure: ${st} Years\n\nTotal Corpus: ${tot}\n\nCalculated with EMI & Finance Calculator`;
   } else {
     shareText = `Check out this financial calculator app: ${window.location.href}`;
   }
@@ -3590,11 +3621,7 @@ function shareCurrentCalc() {
       url: window.location.href
     }).catch(() => {});
   } else {
-    navigator.clipboard.writeText(shareText).then(() => {
-      showToast('Summary copied to clipboard!');
-    }).catch(() => {
-      showToast('Unable to share');
-    });
+    copyTextSafe(shareText, 'Summary copied to clipboard!');
   }
 }
 
@@ -3750,7 +3777,7 @@ function forceCheckUpdate() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     // Cache bust query string ensures Safari always fetches updated sw script
-    navigator.serviceWorker.register('./sw.js?v=2', { scope: './' })
+    navigator.serviceWorker.register('./sw.js?v=3', { scope: './' })
       .then(reg => {
         // Check for updates on startup
         reg.update();
