@@ -1,7 +1,9 @@
-const CACHE_NAME = 'emi-calc-v3';
+const CACHE_NAME = 'emi-calc-v4';
 const ASSETS = [
   './',
   './index.html',
+  './styles.css',
+  './app.js',
   './manifest.json',
   './apple-touch-icon.png',
   './icon-192.png',
