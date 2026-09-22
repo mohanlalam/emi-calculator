@@ -8,9 +8,8 @@ const ASSETS = [
   './icon-512.png'
 ];
 
-// Install: Cache core assets and immediately activate
+// Install: Cache core assets (waits until user confirms or activates)
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);

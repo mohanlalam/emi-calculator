@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' 'unsafe-inline' blob:; img-src 'self' data: blob:; connect-src 'self';">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -93,13 +94,13 @@ body {
   padding-bottom: calc(env(safe-area-inset-bottom) + var(--tabbar-height) + 16px);
   touch-action: manipulation;
   transition: background-color 0.2s ease, color 0.2s ease;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-input, button, select, textarea {
   user-select: auto;
   -webkit-user-select: auto;
+}
+
+.chip, .icon-btn, .pill-btn, .nav-tab-btn, .tab-btn, .sl-tooltip, .app-logo, .brand-text {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* HEADER & TOPBAR */
@@ -1611,7 +1612,7 @@ tbody td:first-child {
 
       <!-- Install / iOS Help button -->
       <button class="icon-btn" onclick="showInstallGuide()" title="Install App" aria-label="Install App">
-        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/><polyline points="9 9 12 12 15 9"/><line x1="12" y1="6" x2="12" y2="12"/></svg>
       </button>
     </div>
   </div>
@@ -1656,7 +1657,7 @@ tbody td:first-child {
       <!-- Loan Amount -->
       <div class="field">
         <div class="field-head">
-          <label class="field-lbl">Loan Amount</label>
+          <label class="field-lbl" for="ep-i">Loan Amount</label>
           <div class="quick-presets">
             <span class="preset-chip" onclick="setLoanAmount(1000000)">₹10L</span>
             <span class="preset-chip" onclick="setLoanAmount(2500000)">₹25L</span>
@@ -1669,7 +1670,7 @@ tbody td:first-child {
           <input class="inp" type="number" id="ep-i" value="5000000" min="100" max="100000000" oninput="s2i('ep-i','ep-s',100,1e8);ce()">
         </div>
         <div class="sl-wrap">
-          <input type="range" id="ep-s" min="100" max="100000000" step="100" value="5000000" oninput="i2s('ep-s','ep-i');ce()">
+          <input type="range" id="ep-s" aria-label="Loan amount slider" min="100" max="100000000" step="100" value="5000000" oninput="i2s('ep-s','ep-i');ce()">
           <div class="sl-lbl"><span>₹100</span><span>₹10 Crore</span></div>
         </div>
       </div>
@@ -1677,7 +1678,7 @@ tbody td:first-child {
       <!-- Rate of Interest -->
       <div class="field">
         <div class="field-head">
-          <label class="field-lbl">Interest Rate (p.a)</label>
+          <label class="field-lbl" for="er-i">Interest Rate (p.a)</label>
           <div class="quick-presets">
             <span class="preset-chip" onclick="setLoanRate(8.5)">8.5%</span>
             <span class="preset-chip" onclick="setLoanRate(9.0)">9.0%</span>
@@ -1690,7 +1691,7 @@ tbody td:first-child {
           <span class="inp-sfx">%</span>
         </div>
         <div class="sl-wrap">
-          <input type="range" id="er-s" min="1" max="30" step="0.1" value="8.5" oninput="i2s('er-s','er-i');ce()">
+          <input type="range" id="er-s" aria-label="Interest rate slider" min="1" max="30" step="0.1" value="8.5" oninput="i2s('er-s','er-i');ce()">
           <div class="sl-lbl"><span>1%</span><span>30%</span></div>
         </div>
       </div>
@@ -1698,7 +1699,7 @@ tbody td:first-child {
       <!-- Tenure -->
       <div class="field">
         <div class="field-head">
-          <label class="field-lbl">Loan Tenure</label>
+          <label class="field-lbl" for="eyr-i">Loan Tenure</label>
           <div class="quick-presets">
             <span class="preset-chip" onclick="setLoanTenure(5)">5Y</span>
             <span class="preset-chip" onclick="setLoanTenure(10)">10Y</span>
@@ -1714,7 +1715,7 @@ tbody td:first-child {
               <span class="inp-sfx">Years</span>
             </div>
             <div class="sl-wrap">
-              <input type="range" id="eyr-s" min="0" max="40" step="1" value="20" oninput="i2s('eyr-s','eyr-i');ce()">
+              <input type="range" id="eyr-s" aria-label="Loan tenure years slider" min="0" max="40" step="1" value="20" oninput="i2s('eyr-s','eyr-i');ce()">
               <div class="sl-lbl"><span>0</span><span>40 Yrs</span></div>
             </div>
           </div>
@@ -1724,7 +1725,7 @@ tbody td:first-child {
               <span class="inp-sfx">Months</span>
             </div>
             <div class="sl-wrap">
-              <input type="range" id="emo-s" min="0" max="11" step="1" value="0" oninput="i2s('emo-s','emo-i');ce()">
+              <input type="range" id="emo-s" aria-label="Loan tenure months slider" min="0" max="11" step="1" value="0" oninput="i2s('emo-s','emo-i');ce()">
               <div class="sl-lbl"><span>0</span><span>11 Mos</span></div>
             </div>
           </div>
@@ -1775,7 +1776,7 @@ tbody td:first-child {
     <div class="card">
       <div class="res-row res-main">
         <span class="res-key" style="font-weight:700;color:var(--text);font-size:.95rem">Monthly EMI</span>
-        <span class="res-val big" id="e-emi">₹43,391</span>
+        <span class="res-val big" id="e-emi" aria-live="polite">₹43,391</span>
       </div>
       <div class="res-row">
         <span class="res-key"><span class="dot dg"></span>Principal Amount</span>
@@ -2497,7 +2498,7 @@ tbody td:first-child {
 </div>
 
 <!-- TOAST -->
-<div class="toast" id="toast">Copied to clipboard!</div>
+<div class="toast" id="toast" role="alert" aria-live="assertive">Copied to clipboard!</div>
 
 <!-- ══════════════ JAVASCRIPT LOGIC ══════════════ -->
 <script>
@@ -2733,12 +2734,18 @@ function ce() {
   const extraMonthly = parseFloat(document.getElementById('prepay-monthly')?.value) || 0;
   const extraYearly = parseFloat(document.getElementById('prepay-yearly')?.value) || 0;
 
-  if (n === 0 || P < 100) {
+  if (isNaN(P) || P < 100 || isNaN(n) || n <= 0 || isNaN(r) || r < 0) {
     document.getElementById('e-emi').textContent = '₹0';
     document.getElementById('e-p').textContent = '₹0';
     document.getElementById('e-int').textContent = '₹0';
     document.getElementById('e-tot').textContent = '₹0';
+    document.getElementById('e-int-pct').textContent = '0%';
+    document.getElementById('ei-pct-lbl').textContent = '0%';
+    document.getElementById('ep-pct-lbl').textContent = '100%';
+    updateDonut('ep-arc', 'ei-arc', 0, 0);
     document.getElementById('e-tbody').innerHTML = '';
+    const prepayBox = document.getElementById('prepay-summary');
+    if (prepayBox) prepayBox.style.display = 'none';
     return;
   }
 
@@ -2781,6 +2788,7 @@ function ce() {
     let payment = emi + extraMonthly;
     if (m % 12 === 0) payment += extraYearly;
     const pp = Math.min(payment - ip, simBal);
+    if (pp <= 0) break; // Guard against negative amortization infinite loops
     simBal -= pp;
   }
 
@@ -2865,6 +2873,18 @@ function cs() {
   const yr = document.getElementById('st-i') ? +document.getElementById('st-i').value : +document.getElementById('st-s').value;
   const su = (document.getElementById('ss-i') ? +document.getElementById('ss-i').value : +document.getElementById('ss-s').value) / 100;
 
+  if (isNaN(M) || M <= 0 || isNaN(yr) || yr <= 0 || isNaN(r) || r < 0) {
+    document.getElementById('s-tot').textContent = '₹0';
+    document.getElementById('s-inv').textContent = '₹0';
+    document.getElementById('s-ret').textContent = '₹0';
+    document.getElementById('s-mul').textContent = '0.00x';
+    document.getElementById('s-gain-pct').textContent = '0%';
+    updateDonut('si-arc', 'sr-arc', 0, 0);
+    const tb = document.getElementById('s-tbody');
+    if (tb) tb.innerHTML = '';
+    return;
+  }
+
   let inv = 0, corpus = 0, monthly = M;
   for (let y = 0; y < yr; y++) {
     for (let m = 0; m < 12; m++) {
@@ -2917,6 +2937,18 @@ function cf() {
   const P = document.getElementById('fp-i') ? +document.getElementById('fp-i').value : +document.getElementById('fp-s').value;
   const r = (document.getElementById('fr-i') ? +document.getElementById('fr-i').value : +document.getElementById('fr-s').value) / 100;
   const t = document.getElementById('ft-i') ? +document.getElementById('ft-i').value : +document.getElementById('ft-s').value;
+
+  if (isNaN(P) || P <= 0 || isNaN(t) || t <= 0 || isNaN(r) || r < 0) {
+    document.getElementById('f-mat').textContent = '₹0';
+    document.getElementById('f-p').textContent = '₹0';
+    document.getElementById('f-int').textContent = '₹0';
+    document.getElementById('f-yld').textContent = '0.00% p.a.';
+    updateDonut('fp-arc', 'fi-arc', 0, 0);
+    const intPctEl = document.getElementById('f-int-pct');
+    if (intPctEl) intPctEl.textContent = '—';
+    return;
+  }
+
   const A = P * Math.pow(1 + r / fdc, fdc * t);
   const int = A - P;
   const eff = (Math.pow(1 + r / fdc, fdc) - 1) * 100;
@@ -2936,13 +2968,26 @@ function cr() {
   const M = document.getElementById('ra-i') ? +document.getElementById('ra-i').value : +document.getElementById('ra-s').value;
   const mr = (document.getElementById('rr-i') ? +document.getElementById('rr-i').value : +document.getElementById('rr-s').value) / 100 / 12;
   const yr = document.getElementById('rt-i') ? +document.getElementById('rt-i').value : +document.getElementById('rt-s').value;
+
+  if (isNaN(M) || M <= 0 || isNaN(yr) || yr <= 0 || isNaN(mr) || mr < 0) {
+    document.getElementById('r-mat').textContent = '₹0';
+    document.getElementById('r-inv').textContent = '₹0';
+    document.getElementById('r-int').textContent = '₹0';
+    document.getElementById('r-eff').textContent = '—';
+    updateDonut('ri-arc', 'rr-arc', 0, 0);
+    const intPctEl = document.getElementById('r-int-pct');
+    if (intPctEl) intPctEl.textContent = '—';
+    return;
+  }
+
   let bal = 0;
   for (let i = 0; i < yr * 12; i++) {
     bal = (bal + M) * (1 + mr);
   }
   const dep = M * yr * 12;
   const ret = bal - dep;
-  const eff = dep > 0 && yr > 0 ? (ret / dep / yr) * 100 : 0;
+  // Effective Annual Yield (compounded annual growth rate / APY)
+  const eff = (Math.pow(1 + mr, 12) - 1) * 100;
 
   document.getElementById('r-mat').textContent = fmt(bal);
   document.getElementById('r-inv').textContent = fmt(dep);
@@ -2960,9 +3005,22 @@ function cl() {
   const r = (document.getElementById('lr-i') ? +document.getElementById('lr-i').value : +document.getElementById('lr-s').value) / 100;
   const t = document.getElementById('lt-i') ? +document.getElementById('lt-i').value : +document.getElementById('lt-s').value;
   const inf = (document.getElementById('li-i') ? +document.getElementById('li-i').value : +document.getElementById('li-s').value) / 100;
+
+  if (isNaN(P) || P <= 0 || isNaN(t) || t <= 0 || isNaN(r) || r < 0) {
+    document.getElementById('l-fv').textContent = '₹0';
+    document.getElementById('l-p').textContent = '₹0';
+    document.getElementById('l-g').textContent = '₹0';
+    document.getElementById('l-rl').textContent = '₹0';
+    document.getElementById('l-ml').textContent = '0.00x';
+    updateDonut('lp-arc', 'lg-arc', 0, 0);
+    const gainPctEl = document.getElementById('l-gain-pct');
+    if (gainPctEl) gainPctEl.textContent = '—';
+    return;
+  }
+
   const fv = P * Math.pow(1 + r, t);
   const g = fv - P;
-  const rl = fv / Math.pow(1 + inf, t);
+  const rl = fv / Math.pow(1 + (isNaN(inf) ? 0 : inf), t);
 
   document.getElementById('l-fv').textContent = fmtC(fv);
   document.getElementById('l-p').textContent = fmt(P);
@@ -2979,7 +3037,13 @@ function cl() {
 function cmp() {
   const P = document.getElementById('ca-i') ? +document.getElementById('ca-i').value : +document.getElementById('ca-s').value;
   const T = document.getElementById('ct-i') ? +document.getElementById('ct-i').value : +document.getElementById('ct-s').value;
-  if (P <= 0 || T <= 0) return;
+  if (isNaN(P) || P <= 0 || isNaN(T) || T <= 0) {
+    const grid = document.getElementById('cmp-grid');
+    if (grid) grid.innerHTML = '<div style="color:var(--text3);padding:24px;text-align:center;grid-column:1/-1">Please enter a valid investment amount and tenure.</div>';
+    const tb = document.getElementById('cmp-tbody');
+    if (tb) tb.innerHTML = '';
+    return;
+  }
   const sm = P / (T * 12), sr = 12 / 100 / 12;
   let sc = 0;
   for (let m = 0; m < T * 12; m++) sc = (sc + sm) * (1 + sr);
@@ -3040,7 +3104,7 @@ function cmpLoan() {
   const T = document.getElementById('cl-t-i') ? +document.getElementById('cl-t-i').value : +document.getElementById('cl-t-s').value;
   const n = T * 12;
 
-  if (n === 0 || P < 100) {
+  if (isNaN(P) || isNaN(T) || n <= 0 || P < 100) {
     document.getElementById('loan-cmp-cards').innerHTML = '<div style="color:var(--text3);padding:24px;text-align:center;grid-column:1/-1">Please enter a loan amount of at least ₹100 and valid tenure.</div>';
     document.getElementById('loan-cmp-tbody').innerHTML = '';
     const ytbody = document.getElementById('loan-cmp-year-tbody');
@@ -3367,7 +3431,7 @@ function openExportModal(tabKey) {
 }
 
 function closeExportModal(e) {
-  if (e && e.target !== document.getElementById('exportModal') && !e.target.closest('.icon-btn') && e.target.tagName !== 'BUTTON') return;
+  if (e && e.target !== document.getElementById('exportModal') && !e.target.closest('button')) return;
   const modal = document.getElementById('exportModal');
   if (modal) modal.classList.remove('active');
 }
@@ -3805,21 +3869,25 @@ if (isIos && !isStandalone && !sessionStorage.getItem('ios_guide_dismissed')) {
   }, 3500);
 }
 
-// ─── LOCAL STORAGE PERSISTENCE ───
+// ─── LOCAL STORAGE PERSISTENCE (DEBOUNCED) ───
+let _savePrefTimer = null;
 function savePreferences() {
-  try {
-    const data = {
-      ep: document.getElementById('ep-i')?.value,
-      er: document.getElementById('er-i')?.value,
-      eyr: document.getElementById('eyr-i')?.value,
-      emo: document.getElementById('emo-i')?.value,
-      sa: document.getElementById('sa-i')?.value,
-      sr: document.getElementById('sr-i')?.value,
-      st: document.getElementById('st-i')?.value,
-      ss: document.getElementById('ss-i')?.value,
-    };
-    localStorage.setItem('emi_calc_data', JSON.stringify(data));
-  } catch(e) {}
+  clearTimeout(_savePrefTimer);
+  _savePrefTimer = setTimeout(() => {
+    try {
+      const data = {
+        ep: document.getElementById('ep-i')?.value,
+        er: document.getElementById('er-i')?.value,
+        eyr: document.getElementById('eyr-i')?.value,
+        emo: document.getElementById('emo-i')?.value,
+        sa: document.getElementById('sa-i')?.value,
+        sr: document.getElementById('sr-i')?.value,
+        st: document.getElementById('st-i')?.value,
+        ss: document.getElementById('ss-i')?.value,
+      };
+      localStorage.setItem('emi_calc_data', JSON.stringify(data));
+    } catch(e) {}
+  }, 300);
 }
 
 function restorePreferences() {
