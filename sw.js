@@ -1,4 +1,4 @@
-const CACHE_NAME = 'emi-calc-v4';
+const CACHE_NAME = 'emi-calc-v6';
 const ASSETS = [
   './',
   './index.html',

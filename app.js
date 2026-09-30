@@ -8,7 +8,7 @@ function updateSliderFill(sl) {
   const min = parseFloat(sl.min) || 0;
   const max = parseFloat(sl.max) || 100;
   const val = parseFloat(sl.value) || 0;
-  const pct = ((val - min) / (max - min)) * 100;
+  const pct = Math.min(100, Math.max(0, ((val - min) / (max - min)) * 100));
   sl.style.background = `linear-gradient(90deg, #00b386 ${pct}%, var(--slider-track) ${pct}%)`;
 
   // Update tooltip
@@ -22,30 +22,48 @@ function updateSliderFill(sl) {
   }
   // Format the tooltip label
   tip.textContent = formatSliderVal(sl, val);
-  // Position tooltip above thumb (account for thumb width ~11px)
-  const thumbPct = pct / 100;
+
+  // Measure track width
   const trackW = sl.offsetWidth || sl.getBoundingClientRect().width;
+  if (trackW <= 0) return; // Slider is currently in a hidden tab/subtab
+
   const thumbRadius = 11;
-  const pos = thumbPct * (trackW - thumbRadius * 2) + thumbRadius;
-  tip.style.left = pos + 'px';
+  const thumbCenter = (pct / 100) * (trackW - thumbRadius * 2) + thumbRadius;
+
+  // Clamp tooltip within container edges so it never clips or pokes outside card edges
+  const tipWidth = tip.offsetWidth || 56;
+  const halfTip = tipWidth / 2;
+  const minLeft = halfTip;
+  const maxLeft = trackW - halfTip;
+  const clampedLeft = Math.max(minLeft, Math.min(maxLeft, thumbCenter));
+
+  tip.style.left = clampedLeft + 'px';
+
+  // Offset the pointer arrow if the bubble is clamped near edges
+  const arrowOffset = Math.round(thumbCenter - clampedLeft);
+  tip.style.setProperty('--arrow-offset', `${arrowOffset}px`);
 }
 
 function formatSliderVal(sl, val) {
-  const id = sl.id || '';
-  // Detect currency sliders by prefix element
   const wrap = sl.closest('.field, div');
   const pfx = wrap && wrap.querySelector('.inp-pfx');
   if (pfx && pfx.textContent.includes('₹')) {
-    if (val >= 1e7) return '₹' + (val/1e7).toFixed(1) + ' Cr';
-    if (val >= 1e5) return '₹' + (val/1e5).toFixed(1) + ' L';
-    if (val >= 1000) return '₹' + (val/1000).toFixed(0) + 'K';
-    return '₹' + val;
+    if (val >= 1e7) {
+      const cr = val / 1e7;
+      return '₹' + (cr % 1 === 0 ? cr.toFixed(0) : cr.toFixed(2)) + ' Cr';
+    }
+    if (val >= 1e5) {
+      const lk = val / 1e5;
+      return '₹' + (lk % 1 === 0 ? lk.toFixed(0) : lk.toFixed(1)) + ' L';
+    }
+    if (val >= 1000) return '₹' + (val / 1000).toFixed(0) + 'K';
+    return '₹' + Math.round(val).toLocaleString('en-IN');
   }
   // % sliders
   const sfx = wrap && wrap.querySelector('.inp-sfx');
   if (sfx) {
     const unit = sfx.textContent.trim();
-    return val + ' ' + unit;
+    return val + (unit === '%' ? '%' : ' ' + unit);
   }
   return val;
 }
@@ -54,14 +72,37 @@ function initAllSliders() {
   document.querySelectorAll('input[type=range]').forEach(sl => {
     updateSliderFill(sl);
 
-    // Show tooltip on drag
-    sl.addEventListener('mousedown', () => sl.closest('.sl-wrap')?.classList.add('dragging'));
-    sl.addEventListener('touchstart', () => sl.closest('.sl-wrap')?.classList.add('dragging'), {passive:true});
-    sl.addEventListener('mouseup', () => sl.closest('.sl-wrap')?.classList.remove('dragging'));
-    sl.addEventListener('touchend', () => sl.closest('.sl-wrap')?.classList.remove('dragging'));
+    const setDragState = (dragging) => {
+      const wrap = sl.closest('.sl-wrap');
+      if (wrap) {
+        wrap.classList.toggle('dragging', dragging);
+        if (dragging) updateSliderFill(sl);
+      }
+    };
 
-    sl.addEventListener('input', () => updateSliderFill(sl));
+    sl.addEventListener('pointerdown', () => setDragState(true));
+    sl.addEventListener('mousedown', () => setDragState(true));
+    sl.addEventListener('touchstart', () => setDragState(true), { passive: true });
+
+    sl.addEventListener('input', () => {
+      setDragState(true);
+      updateSliderFill(sl);
+    });
+    sl.addEventListener('change', () => {
+      setDragState(false);
+      updateSliderFill(sl);
+    });
   });
+
+  // Global release handlers ensure tooltips NEVER get stuck visible
+  const clearAllDragging = () => {
+    document.querySelectorAll('.sl-wrap.dragging').forEach(w => w.classList.remove('dragging'));
+  };
+  window.addEventListener('pointerup', clearAllDragging);
+  window.addEventListener('pointercancel', clearAllDragging);
+  window.addEventListener('mouseup', clearAllDragging);
+  window.addEventListener('touchend', clearAllDragging);
+  window.addEventListener('touchcancel', clearAllDragging);
 }
 
 // Sync input & sliders
@@ -113,6 +154,7 @@ function showToast(msg) {
 
 // Tab Switching (Synchronizes desktop tabs and mobile bottom bar)
 function switchTab(tabId) {
+  if (!tabId) return;
   // Mobile tabs
   document.querySelectorAll('.tabbar-item').forEach(el => {
     el.classList.toggle('active', el.dataset.tab === tabId);
@@ -128,12 +170,24 @@ function switchTab(tabId) {
 
   if (tabId === 'compare-loan') cmpLoan();
   if (tabId === 'investments') cmp();
+  if (tabId === 'avg') calcAvg();
+
+  // Re-sync and position all sliders inside the newly visible panel
+  const activePanel = document.getElementById('tab-' + tabId);
+  if (activePanel) {
+    (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : setTimeout)(() => {
+      activePanel.querySelectorAll('input[type=range]').forEach(sl => updateSliderFill(sl));
+    });
+  }
 
   // Gentle haptic feedback
-  if ('vibrate' in navigator) {
+  if ('vibrate' in navigator && !_isRestoring) {
     try { navigator.vibrate(10); } catch(e) {}
   }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (!_isRestoring) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    savePreferences();
+  }
 }
 
 document.querySelectorAll('.tabbar-item, .nav-tab-btn').forEach(btn => {
@@ -141,58 +195,100 @@ document.querySelectorAll('.tabbar-item, .nav-tab-btn').forEach(btn => {
 });
 
 // Investment Subnav
+let currentInvestSub = 'compare';
 function switchInvestSub(type, el) {
-  el.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('invest-sub-compare').style.display = type === 'compare' ? 'block' : 'none';
-  document.getElementById('invest-sub-lumpsum').style.display = type === 'lumpsum' ? 'block' : 'none';
-  document.getElementById('invest-sub-fd').style.display = type === 'fd' ? 'block' : 'none';
-  document.getElementById('invest-sub-rd').style.display = type === 'rd' ? 'block' : 'none';
+  currentInvestSub = type;
+  if (el && el.parentElement) {
+    el.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  } else {
+    document.querySelectorAll('.subnav-pills .chip').forEach(c => {
+      const isMatch = (type === 'compare' && c.textContent.includes('Compare')) ||
+                      (type === 'lumpsum' && c.textContent.includes('Lumpsum')) ||
+                      (type === 'fd' && c.textContent.includes('Fixed Deposit')) ||
+                      (type === 'rd' && c.textContent.includes('Recurring Deposit'));
+      c.classList.toggle('active', isMatch);
+    });
+  }
+  const cmpEl = document.getElementById('invest-sub-compare');
+  const lmpEl = document.getElementById('invest-sub-lumpsum');
+  const fdEl = document.getElementById('invest-sub-fd');
+  const rdEl = document.getElementById('invest-sub-rd');
+  if (cmpEl) cmpEl.style.display = type === 'compare' ? 'block' : 'none';
+  if (lmpEl) lmpEl.style.display = type === 'lumpsum' ? 'block' : 'none';
+  if (fdEl) fdEl.style.display = type === 'fd' ? 'block' : 'none';
+  if (rdEl) rdEl.style.display = type === 'rd' ? 'block' : 'none';
   if (type === 'compare') cmp();
   if (type === 'lumpsum') cl();
   if (type === 'fd') cf();
   if (type === 'rd') cr();
+
+  // Re-sync sliders in the newly visible investment sub-panel
+  (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : setTimeout)(() => {
+    const activeSub = document.getElementById('invest-sub-' + type);
+    if (activeSub) {
+      activeSub.querySelectorAll('input[type=range]').forEach(sl => updateSliderFill(sl));
+    }
+  });
+
+  savePreferences();
 }
 
 // Accordion Toggle
 function toggleAccordion(id) {
   const acc = document.getElementById(id);
-  acc.classList.toggle('active');
+  if (acc) {
+    acc.classList.toggle('active');
+    savePreferences();
+  }
 }
 
 // Quick preset helpers
 function setLoanAmount(val) {
   document.getElementById('ep-i').value = val;
-  document.getElementById('ep-s').value = val;
+  const sl = document.getElementById('ep-s');
+  if (sl) { sl.value = val; updateSliderFill(sl); }
   ce();
+  savePreferences();
 }
 function setLoanRate(val) {
   document.getElementById('er-i').value = val;
-  document.getElementById('er-s').value = val;
+  const sl = document.getElementById('er-s');
+  if (sl) { sl.value = val; updateSliderFill(sl); }
   ce();
+  savePreferences();
 }
 function setLoanTenure(yrs) {
   document.getElementById('eyr-i').value = yrs;
-  document.getElementById('eyr-s').value = yrs;
   document.getElementById('emo-i').value = 0;
-  document.getElementById('emo-s').value = 0;
+  const sly = document.getElementById('eyr-s');
+  const slm = document.getElementById('emo-s');
+  if (sly) { sly.value = yrs; updateSliderFill(sly); }
+  if (slm) { slm.value = 0; updateSliderFill(slm); }
   ce();
+  savePreferences();
 }
 
 function setSipMonthly(val) {
   document.getElementById('sa-i').value = val;
-  document.getElementById('sa-s').value = val;
+  const sl = document.getElementById('sa-s');
+  if (sl) { sl.value = val; updateSliderFill(sl); }
   cs();
+  savePreferences();
 }
 function setSipRate(val) {
   document.getElementById('sr-i').value = val;
-  document.getElementById('sr-s').value = val;
+  const sl = document.getElementById('sr-s');
+  if (sl) { sl.value = val; updateSliderFill(sl); }
   cs();
+  savePreferences();
 }
 function setSipTenure(val) {
   document.getElementById('st-i').value = val;
-  document.getElementById('st-s').value = val;
+  const sl = document.getElementById('st-s');
+  if (sl) { sl.value = val; updateSliderFill(sl); }
   cs();
+  savePreferences();
 }
 
 // ─── EMI CALCULATOR WITH PREPAYMENT SIMULATION ───
@@ -202,6 +298,7 @@ function setEmiMode(m, el) {
   el.classList.add('active');
   emiMode = m;
   ce();
+  savePreferences();
 }
 
 const loanPresets = {
@@ -211,16 +308,26 @@ const loanPresets = {
 };
 
 let currentLoanType = 'home';
+let currentTaxSlab = 30; // 10%, 20%, 30%
 function setLoan(type, el) {
   currentLoanType = type;
   document.querySelectorAll('#tab-emi .chip-row .chip').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
+  if (el) el.classList.add('active');
   const p = loanPresets[type];
-  document.getElementById('er-i').value = document.getElementById('er-s').value = p.r;
-  document.getElementById('eyr-i').value = document.getElementById('eyr-s').value = p.yr;
-  document.getElementById('emo-i').value = document.getElementById('emo-s').value = p.mo;
+  if (p) {
+    document.getElementById('er-i').value = p.r;
+    document.getElementById('eyr-i').value = p.yr;
+    document.getElementById('emo-i').value = p.mo;
+    const erS = document.getElementById('er-s');
+    const yrS = document.getElementById('eyr-s');
+    const moS = document.getElementById('emo-s');
+    if (erS) { erS.value = p.r; updateSliderFill(erS); }
+    if (yrS) { yrS.value = p.yr; updateSliderFill(yrS); }
+    if (moS) { moS.value = p.mo; updateSliderFill(moS); }
+  }
   ce();
   if (typeof updateTaxBenefits === 'function') updateTaxBenefits();
+  savePreferences();
 }
 
 function ce() {
@@ -453,6 +560,7 @@ function setFDC(n, el) {
   el.classList.add('active');
   fdc = n;
   cf();
+  savePreferences();
 }
 function cf() {
   const P = document.getElementById('fp-i') ? +document.getElementById('fp-i').value : +document.getElementById('fp-s').value;
@@ -695,6 +803,7 @@ function cmpLoan() {
       <td><span class="price-tag tag-profit">${compareLoans[cheapIdx].icon} ${compareLoans[cheapIdx].name.split(' ')[0]}</span></td>
     </tr>`;
   }
+  savePreferences();
 }
 
 // ─── STOCK AVERAGE CALCULATOR ───
@@ -709,10 +818,12 @@ const avgLabels = {
 
 function setAvgType(t, el) {
   document.querySelectorAll('#tab-avg .chip').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
+  if (el) el.classList.add('active');
   avgType = t;
-  document.getElementById('avg-lbl-col1').textContent = avgLabels[t].qty;
+  const colLbl = document.getElementById('avg-lbl-col1');
+  if (colLbl && avgLabels[t]) colLbl.textContent = avgLabels[t].qty;
   calcAvg();
+  savePreferences();
 }
 
 function addAvgRow(qty = '', price = '') {
@@ -733,6 +844,7 @@ function addAvgRow(qty = '', price = '') {
     <button class="del-btn" onclick="removeAvgRow(${n})" title="Remove">×</button>`;
   document.getElementById('avg-rows').appendChild(div);
   calcAvg();
+  savePreferences();
 }
 
 function removeAvgRow(n) {
@@ -744,6 +856,7 @@ function removeAvgRow(n) {
     if (num) num.textContent = i + 1;
   });
   calcAvg();
+  savePreferences();
 }
 
 function getAvgRows() {
@@ -753,6 +866,15 @@ function getAvgRows() {
     const p = parseFloat(document.getElementById('avg-price-' + id)?.value) || 0;
     return { id, qty: q, price: p, inv: q * p };
   }).filter(r => r.qty > 0 && r.price > 0);
+}
+
+function getAllAvgRowInputs() {
+  return [...document.querySelectorAll('#avg-rows .buy-row')].map(row => {
+    const id = row.id.replace('avg-row-', '');
+    const q = document.getElementById('avg-qty-' + id)?.value ?? '';
+    const p = document.getElementById('avg-price-' + id)?.value ?? '';
+    return { qty: q, price: p };
+  });
 }
 
 function calcAvg() {
@@ -773,6 +895,7 @@ function calcAvg() {
     tbody.innerHTML = '';
     tfoot.innerHTML = '';
     totalTag.textContent = '';
+    savePreferences();
     return;
   }
 
@@ -867,6 +990,7 @@ function calcAvg() {
   </tr>`;
 
   totalTag.textContent = `${rows.length} buy${rows.length > 1 ? 's' : ''} · ${totalQty.toLocaleString('en-IN', { maximumFractionDigits: 4 })} ${lbl.unit}`;
+  savePreferences();
 }
 
 // ─── EXPORT & PRINT SYSTEM ───
@@ -1390,28 +1514,93 @@ if (isIos && !isStandalone && !sessionStorage.getItem('ios_guide_dismissed')) {
   }, 3500);
 }
 
-// ─── LOCAL STORAGE PERSISTENCE (DEBOUNCED) ───
+// ─── LOCAL STORAGE PERSISTENCE (DEBOUNCED & INSTANT ON UNLOAD) ───
 let _savePrefTimer = null;
-function savePreferences() {
+let _isRestoring = false;
+
+function setValAndSlider(inpId, slId, val) {
+  if (val === undefined || val === null || val === '') return;
+  const inp = document.getElementById(inpId);
+  const sl = document.getElementById(slId);
+  if (inp) inp.value = val;
+  if (sl) sl.value = val;
+}
+
+function getPreferencesPayload() {
+  return {
+    // Navigation
+    activeTab: typeof getActiveTabKey === 'function' ? getActiveTabKey() : 'emi',
+    investSub: typeof currentInvestSub !== 'undefined' ? currentInvestSub : 'compare',
+
+    // Tab 1: EMI
+    loanType: typeof currentLoanType !== 'undefined' ? currentLoanType : 'home',
+    ep: document.getElementById('ep-i')?.value,
+    er: document.getElementById('er-i')?.value,
+    eyr: document.getElementById('eyr-i')?.value,
+    emo: document.getElementById('emo-i')?.value,
+    prepayMonthly: document.getElementById('prepay-monthly')?.value,
+    prepayYearly: document.getElementById('prepay-yearly')?.value,
+    prepayOpen: document.getElementById('prepay-accordion')?.classList.contains('active') || false,
+    taxSlab: typeof currentTaxSlab !== 'undefined' ? currentTaxSlab : 30,
+    emiMode: typeof emiMode !== 'undefined' ? emiMode : 'yr',
+
+    // Tab 2: SIP
+    sa: document.getElementById('sa-i')?.value,
+    sr: document.getElementById('sr-i')?.value,
+    st: document.getElementById('st-i')?.value,
+    ss: document.getElementById('ss-i')?.value,
+
+    // Tab 3: Compare Loans
+    clP: document.getElementById('cl-p-i')?.value,
+    clT: document.getElementById('cl-t-i')?.value,
+
+    // Tab 4: Investment Suite
+    ca: document.getElementById('ca-i')?.value,
+    ct: document.getElementById('ct-i')?.value,
+    la: document.getElementById('la-i')?.value,
+    lr: document.getElementById('lr-i')?.value,
+    lt: document.getElementById('lt-i')?.value,
+    li: document.getElementById('li-i')?.value,
+    fp: document.getElementById('fp-i')?.value,
+    fr: document.getElementById('fr-i')?.value,
+    ft: document.getElementById('ft-i')?.value,
+    fdc: typeof fdc !== 'undefined' ? fdc : 4,
+    ra: document.getElementById('ra-i')?.value,
+    rr: document.getElementById('rr-i')?.value,
+    rt: document.getElementById('rt-i')?.value,
+
+    // Tab 5: Stock & Crypto Average
+    avgType: typeof avgType !== 'undefined' ? avgType : 'stock',
+    avgCmp: document.getElementById('avg-cmp')?.value,
+    avgRows: typeof getAllAvgRowInputs === 'function' ? getAllAvgRowInputs() : []
+  };
+}
+
+function savePreferencesNow() {
+  if (_isRestoring) return;
   clearTimeout(_savePrefTimer);
-  _savePrefTimer = setTimeout(() => {
-    try {
-      const data = {
-        ep: document.getElementById('ep-i')?.value,
-        er: document.getElementById('er-i')?.value,
-        eyr: document.getElementById('eyr-i')?.value,
-        emo: document.getElementById('emo-i')?.value,
-        sa: document.getElementById('sa-i')?.value,
-        sr: document.getElementById('sr-i')?.value,
-        st: document.getElementById('st-i')?.value,
-        ss: document.getElementById('ss-i')?.value,
-      };
-      localStorage.setItem('emi_calc_data', JSON.stringify(data));
-    } catch(e) {}
-  }, 300);
+  _savePrefTimer = null;
+  try {
+    const data = getPreferencesPayload();
+    localStorage.setItem('emi_calc_data', JSON.stringify(data));
+  } catch(e) {}
+}
+
+function savePreferences() {
+  if (_isRestoring) return;
+  clearTimeout(_savePrefTimer);
+  _savePrefTimer = setTimeout(savePreferencesNow, 150);
+}
+
+function resetAllPreferences() {
+  if (confirm('Reset all calculator values to default?')) {
+    localStorage.removeItem('emi_calc_data');
+    location.reload();
+  }
 }
 
 function restorePreferences() {
+  _isRestoring = true;
   try {
     const savedTheme = localStorage.getItem('emi_theme');
     if (savedTheme) {
@@ -1423,22 +1612,144 @@ function restorePreferences() {
     const raw = localStorage.getItem('emi_calc_data');
     if (raw) {
       const d = JSON.parse(raw);
-      if (d.ep) { document.getElementById('ep-i').value = document.getElementById('ep-s').value = d.ep; }
-      if (d.er) { document.getElementById('er-i').value = document.getElementById('er-s').value = d.er; }
-      if (d.eyr) { document.getElementById('eyr-i').value = document.getElementById('eyr-s').value = d.eyr; }
-      if (d.emo) { document.getElementById('emo-i').value = document.getElementById('emo-s').value = d.emo; }
-      if (d.sa) { document.getElementById('sa-i').value = document.getElementById('sa-s').value = d.sa; }
-      if (d.sr) { document.getElementById('sr-i').value = document.getElementById('sr-s').value = d.sr; }
-      if (d.st) { document.getElementById('st-i').value = document.getElementById('st-s').value = d.st; }
-      if (d.ss) { document.getElementById('ss-i').value = document.getElementById('ss-s').value = d.ss; }
-    }
-  } catch(e) {}
-}
 
-// Initialize Stock Average default rows
-addAvgRow(10, 150);
-addAvgRow(15, 130);
-addAvgRow(20, 110);
+      // 1. EMI Tab
+      if (d.loanType) {
+        currentLoanType = d.loanType;
+        document.querySelectorAll('#tab-emi .chip-row .chip').forEach(b => {
+          const isMatch = (d.loanType === 'home' && b.textContent.includes('Home')) ||
+                          (d.loanType === 'car' && b.textContent.includes('Car')) ||
+                          (d.loanType === 'personal' && b.textContent.includes('Personal'));
+          b.classList.toggle('active', isMatch);
+        });
+      }
+
+      setValAndSlider('ep-i', 'ep-s', d.ep);
+      setValAndSlider('er-i', 'er-s', d.er);
+      setValAndSlider('eyr-i', 'eyr-s', d.eyr);
+      setValAndSlider('emo-i', 'emo-s', d.emo);
+
+      const pm = document.getElementById('prepay-monthly');
+      if (pm && d.prepayMonthly !== undefined) pm.value = d.prepayMonthly;
+      const py = document.getElementById('prepay-yearly');
+      if (py && d.prepayYearly !== undefined) py.value = d.prepayYearly;
+
+      if (d.prepayOpen) {
+        const acc = document.getElementById('prepay-accordion');
+        if (acc) acc.classList.add('active');
+      }
+
+      if (d.taxSlab) {
+        currentTaxSlab = parseInt(d.taxSlab, 10) || 30;
+        document.querySelectorAll('.tax-slab-chip').forEach(c => {
+          c.classList.toggle('active', c.textContent.includes(String(currentTaxSlab)));
+        });
+      }
+
+      if (d.emiMode) {
+        emiMode = d.emiMode;
+        document.querySelectorAll('#tab-emi .toggle-pill .pill-btn').forEach(b => {
+          const isYr = d.emiMode === 'yr' && b.textContent.includes('Year');
+          const isMo = d.emiMode === 'mo' && b.textContent.includes('Month');
+          b.classList.toggle('active', isYr || isMo);
+        });
+      }
+
+      // 2. SIP Tab
+      setValAndSlider('sa-i', 'sa-s', d.sa);
+      setValAndSlider('sr-i', 'sr-s', d.sr);
+      setValAndSlider('st-i', 'st-s', d.st);
+      setValAndSlider('ss-i', 'ss-s', d.ss);
+
+      // 3. Compare Loans Tab
+      setValAndSlider('cl-p-i', 'cl-p-s', d.clP);
+      setValAndSlider('cl-t-i', 'cl-t-s', d.clT);
+
+      // 4. Investment Suite Tab
+      setValAndSlider('ca-i', 'ca-s', d.ca);
+      setValAndSlider('ct-i', 'ct-s', d.ct);
+      setValAndSlider('la-i', 'la-s', d.la);
+      setValAndSlider('lr-i', 'lr-s', d.lr);
+      setValAndSlider('lt-i', 'lt-s', d.lt);
+      setValAndSlider('li-i', 'li-s', d.li);
+      setValAndSlider('fp-i', 'fp-s', d.fp);
+      setValAndSlider('fr-i', 'fr-s', d.fr);
+      setValAndSlider('ft-i', 'ft-s', d.ft);
+      setValAndSlider('ra-i', 'ra-s', d.ra);
+      setValAndSlider('rr-i', 'rr-s', d.rr);
+      setValAndSlider('rt-i', 'rt-s', d.rt);
+
+      if (d.fdc) {
+        fdc = parseInt(d.fdc, 10) || 4;
+        document.querySelectorAll('#invest-sub-fd .chip-row .chip').forEach(b => {
+          const match = (fdc === 1 && b.textContent.includes('Annual')) ||
+                        (fdc === 2 && b.textContent.includes('Half-Yearly')) ||
+                        (fdc === 4 && b.textContent.includes('Quarterly')) ||
+                        (fdc === 12 && b.textContent.includes('Monthly'));
+          b.classList.toggle('active', match);
+        });
+      }
+
+      if (d.investSub) {
+        currentInvestSub = d.investSub;
+        const chip = document.querySelector(`.subnav-pills .chip[onclick*="${d.investSub}"]`);
+        if (chip) {
+          switchInvestSub(d.investSub, chip);
+        } else {
+          switchInvestSub(d.investSub);
+        }
+      }
+
+      // 5. Stock Average Tab
+      if (d.avgType) {
+        avgType = d.avgType;
+        document.querySelectorAll('#tab-avg .chip').forEach(b => {
+          const isMatch = (avgType === 'stock' && b.textContent.includes('Stock')) ||
+                          (avgType === 'mf' && b.textContent.includes('Mutual')) ||
+                          (avgType === 'crypto' && b.textContent.includes('Crypto'));
+          b.classList.toggle('active', isMatch);
+        });
+        if (avgLabels[avgType]) {
+          const colLbl = document.getElementById('avg-lbl-col1');
+          if (colLbl) colLbl.textContent = avgLabels[avgType].qty;
+        }
+      }
+
+      const avgCmpEl = document.getElementById('avg-cmp');
+      if (avgCmpEl && d.avgCmp !== undefined) {
+        avgCmpEl.value = d.avgCmp;
+      }
+
+      if (Array.isArray(d.avgRows) && d.avgRows.length > 0) {
+        const rowsContainer = document.getElementById('avg-rows');
+        if (rowsContainer) rowsContainer.innerHTML = '';
+        avgRowCount = 0;
+        d.avgRows.forEach(r => {
+          addAvgRow(r.qty ?? '', r.price ?? '');
+        });
+      } else {
+        // Fallback default rows if array was empty
+        addAvgRow(10, 150);
+        addAvgRow(15, 130);
+        addAvgRow(20, 110);
+      }
+
+      // 6. Active Tab
+      if (d.activeTab && document.getElementById('tab-' + d.activeTab)) {
+        switchTab(d.activeTab);
+      }
+    } else {
+      // First visit: add default Stock Average rows
+      addAvgRow(10, 150);
+      addAvgRow(15, 130);
+      addAvgRow(20, 110);
+    }
+  } catch(e) {
+    console.error('Error restoring preferences:', e);
+  } finally {
+    _isRestoring = false;
+  }
+}
 
 // Restore saved inputs and run calculations
 restorePreferences();
@@ -1449,12 +1760,34 @@ cr();
 cl();
 cmp();
 cmpLoan();
+calcAvg();
+if (typeof updateTaxBenefits === 'function') updateTaxBenefits();
 
 // Initialize slider fills & tooltips (run after DOM + calcs are ready)
 initAllSliders();
 // Re-run fills whenever window resizes (tooltip positioning)
 window.addEventListener('resize', () => {
   document.querySelectorAll('input[type=range]').forEach(sl => updateSliderFill(sl));
+});
+
+// Auto-save listeners: whenever ANY input or select changes, save state immediately (debounced)
+document.addEventListener('input', (e) => {
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
+    savePreferences();
+  }
+});
+document.addEventListener('change', (e) => {
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
+    savePreferences();
+  }
+});
+window.addEventListener('beforeunload', () => {
+  savePreferencesNow();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    savePreferencesNow();
+  }
 });
 
 // ─── SERVICE WORKER REGISTRATION & AUTO-UPDATE ───
@@ -1563,13 +1896,12 @@ function toggleYearAmortization(y) {
 }
 
 // ─── HOME LOAN TAX BENEFIT ENGINE (SEC 24B & 80C) ───
-let currentTaxSlab = 30; // 10%, 20%, 30%
-
 function setTaxSlab(slab, el) {
   currentTaxSlab = slab;
   document.querySelectorAll('.tax-slab-chip').forEach(c => c.classList.remove('active'));
   if (el) el.classList.add('active');
   updateTaxBenefits();
+  savePreferences();
 }
 
 function updateTaxBenefits() {

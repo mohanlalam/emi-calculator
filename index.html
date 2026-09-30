@@ -139,11 +139,11 @@
         </div>
         <div class="inp-wrap">
           <span class="inp-pfx">₹</span>
-          <input class="inp" type="number" id="ep-i" value="5000000" min="100" max="100000000" oninput="s2i('ep-i','ep-s',100,1e8);ce()">
+          <input class="inp" type="number" id="ep-i" value="5000000" min="10000" max="100000000" oninput="s2i('ep-i','ep-s',100000,1e8);ce()">
         </div>
         <div class="sl-wrap">
-          <input type="range" id="ep-s" aria-label="Loan amount slider" min="100" max="100000000" step="100" value="5000000" oninput="i2s('ep-s','ep-i');ce()">
-          <div class="sl-lbl"><span>₹100</span><span>₹10 Crore</span></div>
+          <input type="range" id="ep-s" aria-label="Loan amount slider" min="100000" max="100000000" step="50000" value="5000000" oninput="i2s('ep-s','ep-i');ce()">
+          <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Crore</span></div>
         </div>
       </div>
 
@@ -212,32 +212,34 @@
           </div>
           <svg class="accordion-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <div class="accordion-content">
-          <div style="font-size:0.76rem;color:var(--text2);margin-bottom:12px">
-            Calculate how much interest and tenure you save by making extra payments.
-          </div>
-          <div class="field" style="margin-bottom:14px">
-            <label class="field-lbl">Extra Monthly Prepayment</label>
-            <div class="inp-wrap">
-              <span class="inp-pfx">₹</span>
-              <input class="inp" type="number" id="prepay-monthly" value="0" min="0" step="500" placeholder="e.g. 5000" oninput="ce()">
+        <div class="accordion-wrapper">
+          <div class="accordion-content">
+            <div style="font-size:0.76rem;color:var(--text2);margin-bottom:12px">
+              Calculate how much interest and tenure you save by making extra payments.
             </div>
-          </div>
-          <div class="field" style="margin-bottom:14px">
-            <label class="field-lbl">Extra Yearly Prepayment</label>
-            <div class="inp-wrap">
-              <span class="inp-pfx">₹</span>
-              <input class="inp" type="number" id="prepay-yearly" value="0" min="0" step="5000" placeholder="e.g. 50000" oninput="ce()">
+            <div class="field" style="margin-bottom:14px">
+              <label class="field-lbl">Extra Monthly Prepayment</label>
+              <div class="inp-wrap">
+                <span class="inp-pfx">₹</span>
+                <input class="inp" type="number" id="prepay-monthly" value="0" min="0" step="500" placeholder="e.g. 5000" oninput="ce()">
+              </div>
             </div>
-          </div>
-          <div class="prepay-savings-badge" id="prepay-summary" style="display:none;">
-            <div>
-              <div class="prepay-stat-val" id="prepay-saved-int">₹0</div>
-              <div class="prepay-stat-lbl">Total Interest Saved</div>
+            <div class="field" style="margin-bottom:14px">
+              <label class="field-lbl">Extra Yearly Prepayment</label>
+              <div class="inp-wrap">
+                <span class="inp-pfx">₹</span>
+                <input class="inp" type="number" id="prepay-yearly" value="0" min="0" step="5000" placeholder="e.g. 50000" oninput="ce()">
+              </div>
             </div>
-            <div>
-              <div class="prepay-stat-val" id="prepay-saved-time">0 mos</div>
-              <div class="prepay-stat-lbl">Tenure Reduced By</div>
+            <div class="prepay-savings-badge" id="prepay-summary" style="display:none;">
+              <div>
+                <div class="prepay-stat-val" id="prepay-saved-int">₹0</div>
+                <div class="prepay-stat-lbl">Total Interest Saved</div>
+              </div>
+              <div>
+                <div class="prepay-stat-val" id="prepay-saved-time">0 mos</div>
+                <div class="prepay-stat-lbl">Tenure Reduced By</div>
+              </div>
             </div>
           </div>
         </div>
@@ -509,11 +511,11 @@
           <label class="field-lbl">Loan Amount</label>
           <div class="inp-wrap">
             <span class="inp-pfx">₹</span>
-            <input class="inp" type="number" id="cl-p-i" value="3000000" min="100" max="100000000" oninput="s2i('cl-p-i','cl-p-s',100,1e8);cmpLoan()">
+            <input class="inp" type="number" id="cl-p-i" value="3000000" min="10000" max="100000000" oninput="s2i('cl-p-i','cl-p-s',100000,1e8);cmpLoan()">
           </div>
           <div class="sl-wrap">
-            <input type="range" id="cl-p-s" min="100" max="100000000" step="100" value="3000000" oninput="i2s('cl-p-s','cl-p-i');cmpLoan()">
-            <div class="sl-lbl"><span>₹100</span><span>₹10 Cr</span></div>
+            <input type="range" id="cl-p-s" min="100000" max="100000000" step="50000" value="3000000" oninput="i2s('cl-p-s','cl-p-i');cmpLoan()">
+            <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Cr</span></div>
           </div>
         </div>
 
