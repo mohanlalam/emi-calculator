@@ -838,8 +838,7 @@ function addAvgRow(qty = '', price = '') {
       <input class="inp" type="number" id="avg-qty-${n}" value="${qty}" min="0" placeholder="0" oninput="calcAvg()" style="text-align:center">
     </div>
     <div class="inp-wrap">
-      <span class="inp-pfx">₹</span>
-      <input class="inp" type="number" id="avg-price-${n}" value="${price}" min="0" placeholder="0.00" step="0.01" oninput="calcAvg()">
+      <input class="inp" type="number" id="avg-price-${n}" value="${price}" min="0" placeholder="0.00" step="0.01" oninput="calcAvg()" style="text-align:center">
     </div>
     <button class="del-btn" onclick="removeAvgRow(${n})" title="Remove">×</button>`;
   document.getElementById('avg-rows').appendChild(div);
