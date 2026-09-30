@@ -59,6 +59,12 @@
   --shadow: 0 6px 24px -2px rgba(0,0,0,0.4);
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', sans-serif;
   background-color: var(--bg);
@@ -224,6 +230,9 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
   height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--nav-bg);
@@ -235,6 +244,7 @@ body {
   justify-content: space-around;
   z-index: 95;
   transition: background-color 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
 }
 
 @media (min-width: 769px) {
@@ -247,20 +257,31 @@ body {
 }
 
 .tabbar-item {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6px 0;
+  padding: 6px 2px;
   background: none;
   border: none;
   color: var(--text3);
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tabbar-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: block;
 }
 
 .tabbar-item svg {
@@ -322,8 +343,140 @@ body {
   .page-body {
     grid-template-columns: 1fr;
   }
+}
+
+@media (max-width: 600px) {
   .topbar-container {
-    padding: 10px 16px;
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  .brand-area {
+    gap: 8px;
+    min-width: 0;
+  }
+  .brand-name {
+    font-size: 0.94rem;
+    white-space: nowrap;
+  }
+  .brand-sub {
+    font-size: 0.62rem;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .header-actions {
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .icon-btn {
+    width: 33px;
+    height: 33px;
+  }
+  .icon-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  .page-head {
+    padding: 12px 14px 4px;
+    gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .page-title {
+    font-size: 1.2rem;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+  .amort-actions {
+    width: 100%;
+    display: flex;
+    gap: 6px;
+  }
+  .amort-actions .btn-sm {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 10px;
+    font-size: 0.72rem;
+  }
+  .page-body {
+    padding: 10px 12px;
+    gap: 12px;
+  }
+  .card {
+    padding: 16px 14px;
+    border-radius: 14px;
+  }
+  .field {
+    margin-bottom: 16px;
+  }
+  .field-lbl {
+    font-size: 0.78rem;
+  }
+  .inp-pfx, .inp-sfx {
+    padding: 8px 10px;
+    font-size: 0.84rem;
+  }
+  .inp {
+    padding: 8px 10px;
+    font-size: 0.94rem;
+  }
+  .res-val.big {
+    font-size: 1.45rem;
+  }
+  .res-row {
+    padding: 10px 0;
+  }
+  .res-key {
+    font-size: 0.8rem;
+  }
+  .res-val {
+    font-size: 0.9rem;
+  }
+  thead th {
+    padding: 8px 10px;
+    font-size: 0.68rem;
+  }
+  tbody td {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+  .buy-row {
+    gap: 6px;
+  }
+  .buy-num {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+  .del-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+  }
+  .subnav-pills {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+  .subnav-pills::-webkit-scrollbar {
+    display: none;
+  }
+  .subnav-pills .chip {
+    flex-shrink: 0;
+  }
+  .chip {
+    padding: 6px 12px;
+    font-size: 0.76rem;
+  }
+  .quick-presets {
+    gap: 4px;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .preset-chip {
+    padding: 2.5px 7px;
+    font-size: 0.68rem;
   }
 }
 
@@ -481,14 +634,14 @@ input[type=range] {
   height: 6px;
   -webkit-appearance: none;
   appearance: none;
-  background: var(--slider-track);
+  background-color: var(--slider-track);
   border-radius: 100px;
   outline: none;
   cursor: pointer;
   display: block;
   box-sizing: content-box;
   padding: 12px 0; /* Creates an ultra-comfortable 30px touch/click hit-box */
-  background-clip: content-box; /* Ensures the track gradient only fills the 6px content */
+  background-clip: content-box !important; /* Ensures the track gradient only fills the 6px content */
   touch-action: none; /* Prevents vertical scroll hijacking during horizontal sliding on touch screens */
   margin: 0;
   -webkit-tap-highlight-color: transparent;

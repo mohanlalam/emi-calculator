@@ -9,7 +9,7 @@ function updateSliderFill(sl) {
   const max = parseFloat(sl.max) || 100;
   const val = parseFloat(sl.value) || 0;
   const pct = Math.min(100, Math.max(0, ((val - min) / (max - min)) * 100));
-  sl.style.background = `linear-gradient(90deg, #00b386 ${pct}%, var(--slider-track) ${pct}%)`;
+  sl.style.backgroundImage = `linear-gradient(90deg, #00b386 ${pct}%, var(--slider-track) ${pct}%)`;
 
   // Update tooltip
   const wrap = sl.closest('.sl-wrap');
@@ -1761,6 +1761,11 @@ cmp();
 cmpLoan();
 calcAvg();
 if (typeof updateTaxBenefits === 'function') updateTaxBenefits();
+try {
+  const _urlParams = new URLSearchParams(window.location.search);
+  const _initialTab = _urlParams.get('tab');
+  if (_initialTab) switchTab(_initialTab);
+} catch(e) {}
 
 // Initialize slider fills & tooltips (run after DOM + calcs are ready)
 initAllSliders();
