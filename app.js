@@ -9,7 +9,7 @@ function updateSliderFill(sl) {
   const max = parseFloat(sl.max) || 100;
   const val = parseFloat(sl.value) || 0;
   const pct = Math.min(100, Math.max(0, ((val - min) / (max - min)) * 100));
-  sl.style.backgroundImage = `linear-gradient(90deg, #00b386 ${pct}%, var(--slider-track) ${pct}%)`;
+  sl.style.backgroundImage = `linear-gradient(90deg, #00e5a0 ${pct}%, var(--slider-track) ${pct}%)`;
 
   // Update tooltip
   const wrap = sl.closest('.sl-wrap');
@@ -87,10 +87,12 @@ function initAllSliders() {
     sl.addEventListener('input', () => {
       setDragState(true);
       updateSliderFill(sl);
+      triggerHaptic('light');
     });
     sl.addEventListener('change', () => {
       setDragState(false);
       updateSliderFill(sl);
+      triggerHaptic('medium');
     });
   });
 
@@ -152,6 +154,716 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+// ─── 1. HAPTIC FEEDBACK ENGINE ───
+let _lastHapticTime = 0;
+function triggerHaptic(type = 'light') {
+  if (!('vibrate' in navigator)) return;
+  const now = performance.now();
+  if (type === 'light' && now - _lastHapticTime < 50) return; // throttle slider ticks
+  _lastHapticTime = now;
+  try {
+    if (type === 'light') navigator.vibrate(6);
+    else if (type === 'medium') navigator.vibrate(12);
+    else if (type === 'success') navigator.vibrate([8, 35, 12]);
+  } catch (e) {}
+}
+
+// ─── 2. NUMBER COUNTER ANIMATION ENGINE ───
+const _animatedValues = {};
+function animateNumber(id, endVal, formatFn = fmt, duration = 280) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (isNaN(endVal)) { el.textContent = formatFn(0); return; }
+
+  const startVal = _animatedValues[id] !== undefined ? _animatedValues[id] : endVal;
+  _animatedValues[id] = endVal;
+
+  if (Math.abs(endVal - startVal) < 1 || duration <= 0 || _isRestoring) {
+    el.textContent = formatFn(endVal);
+    return;
+  }
+
+  if (el._animFrame) cancelAnimationFrame(el._animFrame);
+
+  const startTime = performance.now();
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out cubic
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = startVal + (endVal - startVal) * ease;
+    el.textContent = formatFn(current);
+    if (progress < 1) {
+      el._animFrame = requestAnimationFrame(update);
+    } else {
+      el.textContent = formatFn(endVal);
+      el._animFrame = null;
+    }
+  }
+  el._animFrame = requestAnimationFrame(update);
+}
+
+// ─── 3. SKELETON SHIMMER EFFECT ───
+function triggerSkeletonShimmer() {
+  const targets = document.querySelectorAll('.res-val, .pie-center-val, .tax-val, .afford-box-val');
+  targets.forEach(el => el.classList.add('skeleton'));
+  setTimeout(() => {
+    targets.forEach(el => el.classList.remove('skeleton'));
+  }, 320);
+}
+
+// ─── 4. FLOATING EMI PILL CONTROLLER ───
+function updateFloatingPill(emiVal) {
+  const pillVal = document.getElementById('pill-emi-val');
+  if (pillVal) pillVal.textContent = fmt(emiVal);
+}
+
+function scrollToEmiResults() {
+  triggerHaptic('medium');
+  const resCard = document.querySelector('#tab-emi .card:nth-of-type(2)');
+  if (resCard) {
+    resCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function initFloatingPill() {
+  const pill = document.getElementById('floating-emi-pill');
+  const emiPanel = document.getElementById('tab-emi');
+  if (!pill || !emiPanel) return;
+
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        const isEmiActive = emiPanel.classList.contains('active');
+        if (!isEmiActive) {
+          pill.classList.remove('visible');
+          ticking = false;
+          return;
+        }
+        const resCard = emiPanel.querySelector('.card:nth-of-type(2)');
+        if (!resCard) {
+          pill.classList.remove('visible');
+          ticking = false;
+          return;
+        }
+        const rect = resCard.getBoundingClientRect();
+        if (rect.bottom < 80) {
+          pill.classList.add('visible');
+        } else {
+          pill.classList.remove('visible');
+        }
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+}
+
+// ─── 5. SMART LOAN AFFORDABILITY INDICATOR ───
+window._lastCalculatedEmi = 43391;
+function updateAffordability(currentEmi) {
+  const emi = currentEmi !== undefined ? currentEmi : (window._lastCalculatedEmi || 0);
+  window._lastCalculatedEmi = emi;
+
+  const minSal = emi > 0 ? emi / 0.40 : 0;
+  const recSal = emi > 0 ? emi / 0.30 : 0;
+
+  const minSalEl = document.getElementById('afford-min-salary');
+  const recSalEl = document.getElementById('afford-rec-salary');
+  if (minSalEl) minSalEl.textContent = fmt(minSal);
+  if (recSalEl) recSalEl.textContent = fmt(recSal);
+
+  const userSalaryInp = document.getElementById('user-salary-inp');
+  const userSal = userSalaryInp ? parseFloat(userSalaryInp.value) || 0 : 0;
+
+  const dtiReadout = document.getElementById('user-dti-pct');
+  const dtiGauge = document.getElementById('dti-gauge-bar');
+  const statusBadge = document.getElementById('afford-status-badge');
+
+  if (userSal <= 0 || emi <= 0) {
+    if (dtiReadout) dtiReadout.textContent = 'Enter salary above to calculate DTI';
+    if (dtiGauge) dtiGauge.style.width = '0%';
+    if (statusBadge) {
+      statusBadge.textContent = 'Awaiting Salary';
+      statusBadge.className = 'afford-badge badge-safe';
+    }
+    return;
+  }
+
+  const dtiPct = Math.round((emi / userSal) * 100);
+  const clampedWidth = Math.min(100, Math.max(4, dtiPct));
+
+  if (dtiGauge) {
+    dtiGauge.style.width = clampedWidth + '%';
+    if (dtiPct <= 35) {
+      dtiGauge.style.background = 'linear-gradient(90deg, #00e5a0, #38bdf8)';
+    } else if (dtiPct <= 45) {
+      dtiGauge.style.background = 'linear-gradient(90deg, #38bdf8, #ffb930)';
+    } else {
+      dtiGauge.style.background = 'linear-gradient(90deg, #ffb930, #ff5f6d)';
+    }
+  }
+
+  if (dtiReadout) {
+    dtiReadout.textContent = `EMI is ${dtiPct}% of your monthly take-home`;
+  }
+
+  if (statusBadge) {
+    if (dtiPct <= 35) {
+      statusBadge.textContent = 'Safe & Approved (<35%)';
+      statusBadge.className = 'afford-badge badge-safe';
+    } else if (dtiPct <= 45) {
+      statusBadge.textContent = 'Moderate Burden (35-45%)';
+      statusBadge.className = 'afford-badge badge-mod';
+    } else {
+      statusBadge.textContent = 'High Debt Burden (>45%)';
+      statusBadge.className = 'afford-badge badge-high';
+    }
+  }
+}
+
+// ─── 6. WHAT-IF SCENARIOS MATRIX ───
+function updateWhatIfScenarios(P, rate, nMonths, baselineEmi, baselineTotalInt) {
+  const container = document.getElementById('whatif-grid');
+  if (!container || !P || !rate || !nMonths) return;
+
+  function calcSim(pVal, annualRate, mos) {
+    const r = annualRate / 100 / 12;
+    if (r === 0) return { emi: pVal / mos, totInt: 0 };
+    const pow = Math.pow(1 + r, mos);
+    const emiVal = pVal * r * pow / (pow - 1);
+    return { emi: emiVal, totInt: emiVal * mos - pVal };
+  }
+
+  // 1. Scenario Rate Drop (-0.50% p.a.)
+  const rateDrop = Math.max(1, rate - 0.5);
+  const simRate = calcSim(P, rateDrop, nMonths);
+  const savedRateInt = Math.max(0, baselineTotalInt - simRate.totInt);
+
+  // 2. Scenario Shorter Tenure (-5 years or -2 years if small)
+  const tenureCutMonths = nMonths > 120 ? 60 : (nMonths > 48 ? 24 : 12);
+  const shorterMonths = Math.max(12, nMonths - tenureCutMonths);
+  const simTenure = calcSim(P, rate, shorterMonths);
+  const savedTenureInt = Math.max(0, baselineTotalInt - simTenure.totInt);
+
+  // 3. Scenario Extra Prepayment (+₹5,000 / month)
+  const extraPmt = 5000;
+  let simBal = P;
+  let prepayMonths = 0;
+  let prepayTotalInt = 0;
+  const r = rate / 100 / 12;
+  while (simBal > 0.01 && prepayMonths < nMonths * 2) {
+    prepayMonths++;
+    const ip = simBal * r;
+    prepayTotalInt += ip;
+    const pp = Math.min((baselineEmi + extraPmt) - ip, simBal);
+    if (pp <= 0) break;
+    simBal -= pp;
+  }
+  const savedPrepayInt = Math.max(0, baselineTotalInt - prepayTotalInt);
+  const savedPrepayYears = Math.max(0.1, (nMonths - prepayMonths) / 12).toFixed(1);
+
+  container.innerHTML = `
+    <div class="whatif-col">
+      <div class="whatif-tag">Current Baseline</div>
+      <div class="whatif-emi">${fmt(baselineEmi)}</div>
+      <div class="whatif-emi-lbl">Monthly EMI</div>
+      <div class="whatif-meta">
+        <div class="whatif-meta-row"><span>Rate:</span><b>${rate.toFixed(1)}%</b></div>
+        <div class="whatif-meta-row"><span>Tenure:</span><b>${Math.floor(nMonths/12)}Y ${nMonths%12}M</b></div>
+        <div class="whatif-meta-row"><span>Total Interest:</span><b>${fmtC(baselineTotalInt)}</b></div>
+      </div>
+    </div>
+
+    <div class="whatif-col highlight">
+      <div class="whatif-tag">Rate Cut (-0.5%)</div>
+      <div class="whatif-emi">${fmt(simRate.emi)}</div>
+      <div class="whatif-emi-lbl">Save ${fmt(baselineEmi - simRate.emi)}/mo</div>
+      <div class="whatif-meta">
+        <div class="whatif-meta-row"><span>New Rate:</span><b>${rateDrop.toFixed(1)}%</b></div>
+        <div class="whatif-meta-row"><span>Total Interest:</span><b>${fmtC(simRate.totInt)}</b></div>
+      </div>
+      <div class="whatif-savings-chip">⚡ Saves ${fmtC(savedRateInt)} Interest</div>
+    </div>
+
+    <div class="whatif-col">
+      <div class="whatif-tag">Cut Tenure (-${Math.round(tenureCutMonths/12)} Yrs)</div>
+      <div class="whatif-emi">${fmt(simTenure.emi)}</div>
+      <div class="whatif-emi-lbl">+${fmt(simTenure.emi - baselineEmi)}/mo higher</div>
+      <div class="whatif-meta">
+        <div class="whatif-meta-row"><span>New Tenure:</span><b>${Math.floor(shorterMonths/12)}Y</b></div>
+        <div class="whatif-meta-row"><span>Total Interest:</span><b>${fmtC(simTenure.totInt)}</b></div>
+      </div>
+      <div class="whatif-savings-chip">🔥 Saves ${fmtC(savedTenureInt)} Interest</div>
+    </div>
+
+    <div class="whatif-col highlight">
+      <div class="whatif-tag">+₹5,000 / Month</div>
+      <div class="whatif-emi">${fmt(baselineEmi + extraPmt)}</div>
+      <div class="whatif-emi-lbl">Total Monthly Outflow</div>
+      <div class="whatif-meta">
+        <div class="whatif-meta-row"><span>Finishes:</span><b>${savedPrepayYears} yrs early</b></div>
+        <div class="whatif-meta-row"><span>Total Interest:</span><b>${fmtC(prepayTotalInt)}</b></div>
+      </div>
+      <div class="whatif-savings-chip">🚀 Saves ${fmtC(savedPrepayInt)} Interest</div>
+    </div>
+  `;
+}
+
+// ─── 7. AMORTIZATION CANVAS CHART VISUALIZER ───
+window._lastYearlyAmortData = null;
+function drawAmortizationChart(yearlyData) {
+  const canvas = document.getElementById('amort-chart');
+  if (!canvas || !yearlyData || yearlyData.length === 0) return;
+  const ctx = canvas.getContext('2d');
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || 760;
+  const height = 230;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  ctx.scale(dpr, dpr);
+
+  ctx.clearRect(0, 0, width, height);
+
+  const padding = { top: 22, right: 24, bottom: 28, left: 54 };
+  const chartW = width - padding.left - padding.right;
+  const chartH = height - padding.top - padding.bottom;
+
+  let maxBarSum = 0;
+  let maxBal = 0;
+  yearlyData.forEach(d => {
+    const sum = (d.principal || 0) + (d.interest || 0);
+    if (sum > maxBarSum) maxBarSum = sum;
+    if (d.balance > maxBal) maxBal = d.balance;
+  });
+  if (maxBarSum <= 0) maxBarSum = 1;
+  if (maxBal <= 0) maxBal = maxBarSum;
+
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const textColor = isDark ? '#8b9cc4' : '#4a5878';
+
+  // Horizontal Grid Lines
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 1;
+  ctx.font = '10px Inter, sans-serif';
+  ctx.fillStyle = textColor;
+  ctx.textAlign = 'right';
+
+  for (let i = 0; i <= 3; i++) {
+    const y = padding.top + (chartH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(width - padding.right, y);
+    ctx.stroke();
+
+    const val = maxBarSum * (1 - i / 3);
+    const label = val >= 1e7 ? (val/1e7).toFixed(1) + 'Cr' : val >= 1e5 ? (val/1e5).toFixed(0) + 'L' : (val/1000).toFixed(0) + 'k';
+    ctx.fillText('₹' + label, padding.left - 8, y + 3);
+  }
+
+  // Stacked Bars (Principal + Interest)
+  const count = yearlyData.length;
+  const barWidth = Math.max(4, Math.min(26, (chartW / count) * 0.65));
+  const step = chartW / count;
+
+  yearlyData.forEach((d, i) => {
+    const x = padding.left + i * step + (step - barWidth) / 2;
+    const pHeight = ((d.principal || 0) / maxBarSum) * chartH;
+    const iHeight = ((d.interest || 0) / maxBarSum) * chartH;
+    const yBase = padding.top + chartH;
+
+    // Principal (Green)
+    const pGrad = ctx.createLinearGradient(0, yBase - pHeight, 0, yBase);
+    pGrad.addColorStop(0, '#00e5a0');
+    pGrad.addColorStop(1, '#009966');
+    ctx.fillStyle = pGrad;
+    ctx.beginPath();
+    ctx.rect(x, yBase - pHeight, barWidth, pHeight);
+    ctx.fill();
+
+    // Interest (Red)
+    const iGrad = ctx.createLinearGradient(0, yBase - pHeight - iHeight, 0, yBase - pHeight);
+    iGrad.addColorStop(0, '#ff5f6d');
+    iGrad.addColorStop(1, '#d93848');
+    ctx.fillStyle = iGrad;
+    ctx.beginPath();
+    ctx.rect(x, yBase - pHeight - iHeight, barWidth, iHeight);
+    ctx.fill();
+
+    // Year Label
+    if (count <= 12 || (i % Math.ceil(count / 10) === 0) || i === count - 1) {
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'center';
+      ctx.fillText('Y' + d.year, x + barWidth / 2, yBase + 16);
+    }
+  });
+
+  // Balance Curve (Cyan line)
+  ctx.beginPath();
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 2.5;
+
+  yearlyData.forEach((d, i) => {
+    const x = padding.left + i * step + step / 2;
+    const y = padding.top + chartH - (d.balance / maxBal) * chartH;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+// ─── 8. SIP WEALTH CANVAS CHART VISUALIZER ───
+window._lastSipChartData = null;
+function drawSipChart(sipData) {
+  const canvas = document.getElementById('sip-chart');
+  if (!canvas || !sipData || sipData.length === 0) return;
+  const ctx = canvas.getContext('2d');
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || 760;
+  const height = 230;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  ctx.scale(dpr, dpr);
+
+  ctx.clearRect(0, 0, width, height);
+
+  const padding = { top: 22, right: 24, bottom: 28, left: 54 };
+  const chartW = width - padding.left - padding.right;
+  const chartH = height - padding.top - padding.bottom;
+
+  let maxVal = 0;
+  sipData.forEach(d => {
+    if (d.val > maxVal) maxVal = d.val;
+  });
+  if (maxVal <= 0) maxVal = 1;
+
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const textColor = isDark ? '#8b9cc4' : '#4a5878';
+
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 1;
+  ctx.font = '10px Inter, sans-serif';
+  ctx.fillStyle = textColor;
+  ctx.textAlign = 'right';
+
+  for (let i = 0; i <= 3; i++) {
+    const y = padding.top + (chartH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(width - padding.right, y);
+    ctx.stroke();
+
+    const val = maxVal * (1 - i / 3);
+    const label = val >= 1e7 ? (val/1e7).toFixed(1) + 'Cr' : val >= 1e5 ? (val/1e5).toFixed(0) + 'L' : (val/1000).toFixed(0) + 'k';
+    ctx.fillText('₹' + label, padding.left - 8, y + 3);
+  }
+
+  const count = sipData.length;
+  const barWidth = Math.max(4, Math.min(26, (chartW / count) * 0.65));
+  const step = chartW / count;
+
+  sipData.forEach((d, i) => {
+    const x = padding.left + i * step + (step - barWidth) / 2;
+    const invHeight = ((d.invested || 0) / maxVal) * chartH;
+    const gainHeight = ((d.gains || 0) / maxVal) * chartH;
+    const yBase = padding.top + chartH;
+
+    // Invested (Green)
+    const pGrad = ctx.createLinearGradient(0, yBase - invHeight, 0, yBase);
+    pGrad.addColorStop(0, '#00e5a0');
+    pGrad.addColorStop(1, '#009966');
+    ctx.fillStyle = pGrad;
+    ctx.beginPath();
+    ctx.rect(x, yBase - invHeight, barWidth, invHeight);
+    ctx.fill();
+
+    // Gains (Red/Pink)
+    const iGrad = ctx.createLinearGradient(0, yBase - invHeight - gainHeight, 0, yBase - invHeight);
+    iGrad.addColorStop(0, '#ff5f6d');
+    iGrad.addColorStop(1, '#d93848');
+    ctx.fillStyle = iGrad;
+    ctx.beginPath();
+    ctx.rect(x, yBase - invHeight - gainHeight, barWidth, gainHeight);
+    ctx.fill();
+
+    if (count <= 12 || (i % Math.ceil(count / 10) === 0) || i === count - 1) {
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'center';
+      ctx.fillText('Y' + d.year, x + barWidth / 2, yBase + 16);
+    }
+  });
+}
+
+// ─── 9. SHARE CALCULATION AS IMAGE (CANVAS HD) ───
+function shareAsImage(type = 'emi') {
+  triggerHaptic('medium');
+  if (type === 'current') {
+    const activeTab = document.querySelector('.tabbar-item.active')?.dataset.tab || 'emi';
+    type = activeTab === 'sip' ? 'sip' : 'emi';
+  }
+  const isEmi = type !== 'sip';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 630;
+  const ctx = canvas.getContext('2d');
+
+  // Background Gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, 1200, 630);
+  bgGrad.addColorStop(0, '#060e1e');
+  bgGrad.addColorStop(0.5, '#0a162b');
+  bgGrad.addColorStop(1, '#050c18');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, 1200, 630);
+
+  // Radial Glows
+  const radial1 = ctx.createRadialGradient(250, 150, 20, 250, 150, 350);
+  radial1.addColorStop(0, 'rgba(0, 229, 160, 0.12)');
+  radial1.addColorStop(1, 'transparent');
+  ctx.fillStyle = radial1;
+  ctx.fillRect(0, 0, 1200, 630);
+
+  const radial2 = ctx.createRadialGradient(950, 480, 20, 950, 480, 400);
+  radial2.addColorStop(0, 'rgba(59, 158, 255, 0.08)');
+  radial2.addColorStop(1, 'transparent');
+  ctx.fillStyle = radial2;
+  ctx.fillRect(0, 0, 1200, 630);
+
+  // Border
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(20, 20, 1160, 590);
+
+  // Brand Header
+  ctx.fillStyle = '#00e5a0';
+  ctx.font = '800 20px Inter, sans-serif';
+  ctx.fillText('⚡ EMI & FINANCE CALCULATOR', 60, 75);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 38px Inter, sans-serif';
+  ctx.fillText(isEmi ? 'Home Loan EMI Breakdown' : 'SIP Wealth Growth Report', 60, 125);
+
+  if (isEmi) {
+    const emi = document.getElementById('e-emi')?.textContent || '₹0';
+    const p = document.getElementById('e-p')?.textContent || '₹0';
+    const totalInt = document.getElementById('e-int')?.textContent || '₹0';
+    const tot = document.getElementById('e-tot')?.textContent || '₹0';
+    const rate = (document.getElementById('er-i')?.value || '8.5') + '%';
+    const yrs = (document.getElementById('eyr-i')?.value || '20') + ' Years';
+
+    // Hero Monthly EMI Card
+    ctx.fillStyle = 'rgba(0, 229, 160, 0.08)';
+    ctx.strokeStyle = 'rgba(0, 229, 160, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.rect(60, 160, 500, 160);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#8b9cc4';
+    ctx.font = '700 16px Inter, sans-serif';
+    ctx.fillText('MONTHLY EMI (OUTFLOW)', 90, 205);
+
+    ctx.fillStyle = '#00e5a0';
+    ctx.font = '900 56px Inter, sans-serif';
+    ctx.fillText(emi, 90, 275);
+
+    const stats = [
+      { label: 'Principal Loan Amount', val: p, color: '#38bdf8' },
+      { label: 'Total Interest Payable', val: totalInt, color: '#ff5f6d' },
+      { label: 'Total Repayment Amount', val: tot, color: '#ffffff' },
+      { label: 'Loan Terms', val: `${rate} @ ${yrs}`, color: '#ffb930' }
+    ];
+
+    stats.forEach((s, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const x = 590 + col * 270;
+      const y = 160 + row * 82;
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.beginPath();
+      ctx.rect(x, y, 250, 72);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#8b9cc4';
+      ctx.font = '600 13px Inter, sans-serif';
+      ctx.fillText(s.label, x + 18, y + 28);
+
+      ctx.fillStyle = s.color;
+      ctx.font = '800 22px Inter, sans-serif';
+      ctx.fillText(s.val, x + 18, y + 56);
+    });
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.fillRect(60, 360, 1080, 180);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.strokeRect(60, 360, 1080, 180);
+
+    ctx.fillStyle = '#f0f4ff';
+    ctx.font = '700 20px Inter, sans-serif';
+    ctx.fillText('Financial Assessment Summary', 90, 405);
+
+    ctx.fillStyle = '#8b9cc4';
+    ctx.font = '500 15px Inter, sans-serif';
+    ctx.fillText('• Recommended Net Monthly Income: ' + (document.getElementById('afford-rec-salary')?.textContent || '—'), 90, 445);
+    ctx.fillText('• First Year Est. Tax Deductions: ' + (document.getElementById('tax-total-savings')?.textContent || '—'), 90, 475);
+    ctx.fillText('• Calculated on: ' + new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }), 90, 505);
+
+  } else {
+    const sTot = document.getElementById('s-tot')?.textContent || '₹0';
+    const sInv = document.getElementById('s-inv')?.textContent || '₹0';
+    const sRet = document.getElementById('s-ret')?.textContent || '₹0';
+    const sMul = document.getElementById('s-mul')?.textContent || '0.00x';
+    const sMon = fmt(document.getElementById('sa-i')?.value || 10000);
+    const sRate = (document.getElementById('sr-i')?.value || '12') + '% p.a.';
+    const sTenure = (document.getElementById('st-i')?.value || '15') + ' Yrs';
+
+    ctx.fillStyle = 'rgba(0, 229, 160, 0.08)';
+    ctx.strokeStyle = 'rgba(0, 229, 160, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.rect(60, 160, 500, 160);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#8b9cc4';
+    ctx.font = '700 16px Inter, sans-serif';
+    ctx.fillText('ESTIMATED MATURITY WEALTH', 90, 205);
+
+    ctx.fillStyle = '#00e5a0';
+    ctx.font = '900 56px Inter, sans-serif';
+    ctx.fillText(sTot, 90, 275);
+
+    const stats = [
+      { label: 'Total Invested Amount', val: sInv, color: '#38bdf8' },
+      { label: 'Accrued Capital Gains', val: sRet, color: '#00e5a0' },
+      { label: 'Wealth Multiplier', val: sMul, color: '#ffb930' },
+      { label: 'SIP Plan', val: `${sMon}/mo • ${sRate}`, color: '#ffffff' }
+    ];
+
+    stats.forEach((s, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const x = 590 + col * 270;
+      const y = 160 + row * 82;
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.beginPath();
+      ctx.rect(x, y, 250, 72);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#8b9cc4';
+      ctx.font = '600 13px Inter, sans-serif';
+      ctx.fillText(s.label, x + 18, y + 28);
+
+      ctx.fillStyle = s.color;
+      ctx.font = '800 22px Inter, sans-serif';
+      ctx.fillText(s.val, x + 18, y + 56);
+    });
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.fillRect(60, 360, 1080, 180);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.strokeRect(60, 360, 1080, 180);
+
+    ctx.fillStyle = '#f0f4ff';
+    ctx.font = '700 20px Inter, sans-serif';
+    ctx.fillText('Wealth Compounding Insights', 90, 405);
+
+    ctx.fillStyle = '#8b9cc4';
+    ctx.font = '500 15px Inter, sans-serif';
+    ctx.fillText('• Duration: ' + sTenure + ' of disciplined monthly investing', 90, 445);
+    ctx.fillText('• Power of Compounding: Gains represent ' + (document.getElementById('s-gain-pct')?.textContent || '—') + ' of final portfolio', 90, 475);
+    ctx.fillText('• Generated on: ' + new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }), 90, 505);
+  }
+
+  ctx.fillStyle = '#4a5780';
+  ctx.font = '500 14px Inter, sans-serif';
+  ctx.fillText('Created with Smart EMI & Finance Calculator PWA', 60, 580);
+
+  canvas.toBlob(blob => {
+    if (!blob) return;
+    const fileName = isEmi ? 'emi-breakdown-report.png' : 'sip-wealth-report.png';
+    const file = new File([blob], fileName, { type: 'image/png' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({
+        files: [file],
+        title: isEmi ? 'Loan EMI Breakdown' : 'SIP Wealth Report',
+        text: 'Check out my calculation from EMI & Finance Calculator'
+      }).catch(err => {
+        if (err.name !== 'AbortError') downloadBlob(blob, fileName);
+      });
+    } else {
+      downloadBlob(blob, fileName);
+    }
+  }, 'image/png');
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('Image downloaded!');
+}
+
+// ─── 10. SWIPE GESTURES FOR MOBILE TABS ───
+function initSwipeGestures() {
+  const tabs = ['emi', 'sip', 'compare-loan', 'investments', 'avg'];
+  let startX = 0, startY = 0, startTime = 0;
+
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return;
+    const target = e.target;
+    if (target.closest('input[type=range], input, textarea, .tbl-scroll, .chart-canvas-wrap')) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!startX || !startTime) return;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    const elapsed = Date.now() - startTime;
+
+    startX = 0;
+    startY = 0;
+    startTime = 0;
+
+    if (Math.abs(deltaX) > 65 && Math.abs(deltaY) < 45 && elapsed < 450) {
+      const currentActive = document.querySelector('.tabbar-item.active')?.dataset.tab || 'emi';
+      const currentIndex = tabs.indexOf(currentActive);
+      if (currentIndex === -1) return;
+
+      if (deltaX < 0 && currentIndex < tabs.length - 1) {
+        switchTab(tabs[currentIndex + 1]);
+      } else if (deltaX > 0 && currentIndex > 0) {
+        switchTab(tabs[currentIndex - 1]);
+      }
+    }
+  }, { passive: true });
+}
+
 // Tab Switching (Synchronizes desktop tabs and mobile bottom bar)
 function switchTab(tabId) {
   if (!tabId) return;
@@ -180,11 +892,16 @@ function switchTab(tabId) {
     });
   }
 
-  // Gentle haptic feedback
-  if ('vibrate' in navigator && !_isRestoring) {
-    try { navigator.vibrate(10); } catch(e) {}
+  // Redraw canvas charts after panel becomes visible
+  if (tabId === 'emi') {
+    setTimeout(() => { if (window._lastYearlyAmortData) drawAmortizationChart(window._lastYearlyAmortData); }, 60);
+  } else if (tabId === 'sip') {
+    setTimeout(() => { if (window._lastSipChartData) drawSipChart(window._lastSipChartData); }, 60);
   }
+
+  // Gentle haptic feedback
   if (!_isRestoring) {
+    triggerHaptic('medium');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     savePreferences();
   }
@@ -368,10 +1085,14 @@ function ce() {
     totalInt = tot - P;
   }
 
-  document.getElementById('e-emi').textContent = fmt(emi);
-  document.getElementById('e-p').textContent = fmt(P);
-  document.getElementById('e-int').textContent = fmt(totalInt);
-  document.getElementById('e-tot').textContent = fmt(tot);
+  animateNumber('e-emi', emi);
+  animateNumber('e-p', P);
+  animateNumber('e-int', totalInt);
+  animateNumber('e-tot', tot);
+
+  updateFloatingPill(emi);
+  updateAffordability(emi);
+  updateWhatIfScenarios(P, annualRate, n, emi, totalInt);
 
   const intPct = tot > 0 ? ((totalInt / tot) * 100).toFixed(0) : 0;
   const prnPct = 100 - intPct;
@@ -415,6 +1136,30 @@ function ce() {
   } else {
     prepayBox.style.display = 'none';
   }
+
+  // Pre-calculate yearly data for the Amortization Chart
+  const yearlyChartData = [];
+  let chartBal = P;
+  let chartMonth = 0;
+  let cy = 1;
+  while (chartMonth < n && chartBal > 0.01) {
+    let cyp = 0, cyi = 0;
+    for (let cm = 0; cm < 12; cm++) {
+      if (chartBal <= 0.01) break;
+      chartMonth++;
+      const ip = chartBal * r;
+      let pmt = emi + extraMonthly;
+      if (chartMonth % 12 === 0) pmt += extraYearly;
+      const pp = Math.min(pmt - ip, chartBal);
+      cyi += ip;
+      cyp += pp;
+      chartBal -= pp;
+    }
+    yearlyChartData.push({ year: cy, principal: cyp, interest: cyi, balance: Math.max(0, chartBal) });
+    cy++;
+  }
+  window._lastYearlyAmortData = yearlyChartData;
+  drawAmortizationChart(yearlyChartData);
 
   // Render Amortization Table
   const tb = document.getElementById('e-tbody');
@@ -522,9 +1267,9 @@ function cs() {
     monthly *= (1 + su);
   }
   const ret = corpus - inv;
-  document.getElementById('s-tot').textContent = fmtC(corpus);
-  document.getElementById('s-inv').textContent = fmt(inv);
-  document.getElementById('s-ret').textContent = fmt(ret);
+  animateNumber('s-tot', corpus, fmtC);
+  animateNumber('s-inv', inv);
+  animateNumber('s-ret', ret);
   document.getElementById('s-mul').textContent = inv > 0 ? (corpus / inv).toFixed(2) + 'x' : '0.00x';
 
   const retPct = corpus > 0 ? ((ret / corpus) * 100).toFixed(0) : 0;
@@ -534,6 +1279,7 @@ function cs() {
   let ci = 0, val = 0, mon = M;
   const tb = document.getElementById('s-tbody');
   tb.innerHTML = '';
+  const sipChartData = [];
   for (let y = 1; y <= yr; y++) {
     let yi = 0;
     for (let m = 0; m < 12; m++) {
@@ -542,6 +1288,7 @@ function cs() {
       val = (val + mon) * (1 + r);
     }
     mon *= (1 + su);
+    sipChartData.push({ year: y, invested: ci, val: val, gains: Math.max(0, val - ci) });
     tb.innerHTML += `<tr>
       <td>Year ${y}</td>
       <td>${fmt(yi)}</td>
@@ -550,6 +1297,8 @@ function cs() {
       <td class="tg">${fmt(val - ci)}</td>
     </tr>`;
   }
+  window._lastSipChartData = sipChartData;
+  drawSipChart(sipChartData);
   savePreferences();
 }
 
@@ -1468,9 +2217,11 @@ function shareCurrentCalc() {
 }
 
 // ─── DARK / LIGHT THEME ───
+// Dark is the DEFAULT (no attribute or data-theme="dark").
+// Light mode is applied via data-theme="light" override.
 function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme') || 'light';
-  const target = current === 'dark' ? 'light' : 'dark';
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const target = current === 'light' ? 'dark' : 'light';
   setTheme(target);
 }
 
@@ -1479,17 +2230,19 @@ function setTheme(theme) {
   const sun = document.querySelector('.sun-icon');
   const moon = document.querySelector('.moon-icon');
   const meta = document.getElementById('theme-color-meta');
-  if (theme === 'dark') {
+  if (theme === 'light') {
+    // Light mode: show sun icon (to switch back to dark)
     if (sun) sun.style.display = 'block';
     if (moon) moon.style.display = 'none';
-    if (meta) meta.setAttribute('content', '#0b0f19');
+    if (meta) meta.setAttribute('content', '#f0f4f8');
   } else {
+    // Dark mode (default): show moon icon (to switch to light)
     if (sun) sun.style.display = 'none';
     if (moon) moon.style.display = 'block';
-    if (meta) meta.setAttribute('content', '#00b386');
+    if (meta) meta.setAttribute('content', '#060e1e');
   }
   localStorage.setItem('emi_theme', theme);
-  // Refresh slider fills after theme change (track color changes)
+  // Refresh slider fills after theme change
   setTimeout(() => document.querySelectorAll('input[type=range]').forEach(sl => updateSliderFill(sl)), 50);
 }
 
@@ -1604,8 +2357,10 @@ function restorePreferences() {
     const savedTheme = localStorage.getItem('emi_theme');
     if (savedTheme) {
       setTheme(savedTheme);
-    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      setTheme('light');
+    } else {
+      setTheme('dark'); // Dark is default
     }
 
     const raw = localStorage.getItem('emi_calc_data');
@@ -1769,9 +2524,15 @@ try {
 
 // Initialize slider fills & tooltips (run after DOM + calcs are ready)
 initAllSliders();
-// Re-run fills whenever window resizes (tooltip positioning)
+initFloatingPill();
+initSwipeGestures();
+triggerSkeletonShimmer();
+
+// Re-run fills and charts whenever window resizes
 window.addEventListener('resize', () => {
   document.querySelectorAll('input[type=range]').forEach(sl => updateSliderFill(sl));
+  if (window._lastYearlyAmortData) drawAmortizationChart(window._lastYearlyAmortData);
+  if (window._lastSipChartData) drawSipChart(window._lastSipChartData);
 });
 
 // Auto-save listeners: whenever ANY input or select changes, save state immediately (debounced)
@@ -2030,11 +2791,16 @@ window.syncInputToSlider = i2s;
 window.toggleYearAmortization = toggleYearAmortization;
 window.setTaxSlab = setTaxSlab;
 window.updateTaxBenefits = updateTaxBenefits;
+window.shareAsImage = shareAsImage;
+window.scrollToEmiResults = scrollToEmiResults;
+window.updateAffordability = updateAffordability;
 
-// Attach tooltip init on window load
+// Attach tooltip and initial chart redraw on window load
 window.addEventListener('load', () => {
   setTimeout(() => {
     initDonutTooltips();
     updateTaxBenefits();
+    if (window._lastYearlyAmortData) drawAmortizationChart(window._lastYearlyAmortData);
+    if (window._lastSipChartData) drawSipChart(window._lastSipChartData);
   }, 200);
 });
