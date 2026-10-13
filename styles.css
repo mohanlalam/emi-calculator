@@ -3,8 +3,6 @@
    Design: Deep Space + Luminous Emerald-Cyan Glassmorphism
    ================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 :root {
@@ -353,6 +351,14 @@ body::before {
   box-shadow: 0 0 0 3px var(--green-glow2), 0 0 24px var(--green-glow2), 0 4px 16px rgba(0,229,160,0.1);
   background: rgba(0,229,160,0.03);
 }
+.inp-wrap.is-invalid, .inp.is-invalid {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 3px var(--red-lt), 0 0 16px rgba(255,95,109,0.2) !important;
+  background: rgba(255,95,109,0.04) !important;
+}
+.inp-wrap.is-invalid .inp-pfx, .inp-wrap.is-invalid .inp-sfx {
+  color: var(--red) !important;
+}
 .inp-pfx, .inp-sfx {
   padding: 11px 14px; background: rgba(255,255,255,0.04);
   font-size: 0.9rem; font-weight: 700; color: var(--text2);
@@ -582,6 +588,13 @@ tbody td:first-child { text-align: left; color: var(--text); font-weight: 700; }
 .tg { color: var(--green) !important; font-weight: 700; }
 .tr { color: var(--red) !important; font-weight: 700; }
 .tb { color: var(--blue) !important; font-weight: 700; }
+.year-row { cursor: pointer; user-select: none; font-weight: 700; background: rgba(255,255,255,0.02); }
+.year-row:hover { background: var(--green-lt) !important; }
+.year-row .expand-chevron { display: inline-block; transition: transform 0.2s ease; margin-right: 6px; font-size: 0.72rem; }
+.year-row.expanded .expand-chevron { transform: rotate(90deg); color: var(--green); }
+.month-subrow { background: rgba(0,0,0,0.18); font-size: 0.78rem; }
+.month-subrow td:first-child { padding-left: 28px; color: var(--text2); }
+[data-theme="light"] .month-subrow { background: rgba(0,0,0,0.03); }
 
 /* ============ PANELS ============ */
 .calc-panel { display: none; }

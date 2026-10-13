@@ -107,31 +107,58 @@ function initAllSliders() {
   window.addEventListener('touchcancel', clearAllDragging);
 }
 
-// Sync input & sliders
-function i2s(sId, iId) {
+// Sync input & sliders with validation and bounds clamping
+function syncInputToSlider(sId, iId) {
   const s = document.getElementById(sId), i = document.getElementById(iId);
   if (s && i) {
     i.value = s.value;
+    const wrap = i.closest('.inp-wrap') || i;
+    wrap.classList.remove('is-invalid');
+    i.classList.remove('is-invalid');
     updateSliderFill(s);
   }
   if (typeof updateTaxBenefits === 'function') updateTaxBenefits();
   savePreferences();
 }
-function s2i(iId, sId, mn, mx) {
+const i2s = syncInputToSlider;
+
+function syncSliderToInput(iId, sId, mn, mx) {
   const i = document.getElementById(iId), s = document.getElementById(sId);
   if (!i || !s) return;
+  const wrap = i.closest('.inp-wrap') || i;
   let v = parseFloat(i.value);
+  if (isNaN(v) || (mn !== undefined && v < mn) || (mx !== undefined && v > mx)) {
+    wrap.classList.add('is-invalid');
+    i.classList.add('is-invalid');
+  } else {
+    wrap.classList.remove('is-invalid');
+    i.classList.remove('is-invalid');
+  }
   if (isNaN(v)) return;
-  s.value = Math.min(Math.max(v, mn), mx);
+  s.value = Math.min(Math.max(v, mn !== undefined ? mn : 0), mx !== undefined ? mx : Infinity);
   updateSliderFill(s);
+  if (typeof updateTaxBenefits === 'function') updateTaxBenefits();
   savePreferences();
+}
+const s2i = syncSliderToInput;
+
+function clampInputValue(iId, mn, mx) {
+  const i = document.getElementById(iId);
+  if (!i) return;
+  const wrap = i.closest('.inp-wrap') || i;
+  let v = parseFloat(i.value);
+  if (isNaN(v)) v = mn || 0;
+  v = Math.min(Math.max(v, mn !== undefined ? mn : -Infinity), mx !== undefined ? mx : Infinity);
+  i.value = v;
+  wrap.classList.remove('is-invalid');
+  i.classList.remove('is-invalid');
 }
 
 // Donut Chart renderer
 function updateDonut(id1, id2, v1, v2) {
   const t = v1 + v2;
   if (t <= 0) return;
-  const C = 414; // 2 * PI * 66
+  const C = 2 * Math.PI * 66; // exact circumference: ~414.69023
   const s1 = (v1 / t) * C;
   const s2 = (v2 / t) * C;
   const e1 = document.getElementById(id1);
@@ -353,16 +380,20 @@ function updateWhatIfScenarios(P, rate, nMonths, baselineEmi, baselineTotalInt) 
   let prepayMonths = 0;
   let prepayTotalInt = 0;
   const r = rate / 100 / 12;
-  while (simBal > 0.01 && prepayMonths < nMonths * 2) {
-    prepayMonths++;
-    const ip = simBal * r;
-    prepayTotalInt += ip;
-    const pp = Math.min((baselineEmi + extraPmt) - ip, simBal);
-    if (pp <= 0) break;
-    simBal -= pp;
+  const maxIterations = Math.min(1200, Math.max(nMonths * 2, 600));
+  const minRequiredPayment = simBal * r;
+  if ((baselineEmi + extraPmt) > minRequiredPayment) {
+    while (simBal > 0.01 && prepayMonths < maxIterations) {
+      prepayMonths++;
+      const ip = simBal * r;
+      prepayTotalInt += ip;
+      const pp = Math.min((baselineEmi + extraPmt) - ip, simBal);
+      if (pp <= 0) break;
+      simBal -= pp;
+    }
   }
   const savedPrepayInt = Math.max(0, baselineTotalInt - prepayTotalInt);
-  const savedPrepayYears = Math.max(0.1, (nMonths - prepayMonths) / 12).toFixed(1);
+  const savedPrepayYears = Math.max(0, (nMonths - prepayMonths) / 12).toFixed(1);
 
   container.innerHTML = `
     <div class="whatif-col">
@@ -869,11 +900,15 @@ function switchTab(tabId) {
   if (!tabId) return;
   // Mobile tabs
   document.querySelectorAll('.tabbar-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.tab === tabId);
+    const isActive = el.dataset.tab === tabId;
+    el.classList.toggle('active', isActive);
+    el.setAttribute('aria-selected', isActive ? 'true' : 'false');
   });
   // Desktop tabs
   document.querySelectorAll('.nav-tab-btn').forEach(el => {
-    el.classList.toggle('active', el.dataset.tab === tabId);
+    const isActive = el.dataset.tab === tabId;
+    el.classList.toggle('active', isActive);
+    el.setAttribute('aria-selected', isActive ? 'true' : 'false');
   });
   // Panels
   document.querySelectorAll('.calc-panel').forEach(el => {
@@ -1047,12 +1082,17 @@ function setLoan(type, el) {
   savePreferences();
 }
 
-function ce() {
-  const P = document.getElementById('ep-i') ? +document.getElementById('ep-i').value : +document.getElementById('ep-s').value;
-  const annualRate = document.getElementById('er-i') ? +document.getElementById('er-i').value : +document.getElementById('er-s').value;
+function calculateEMI() {
+  const rawP = document.getElementById('ep-i') ? +document.getElementById('ep-i').value : +document.getElementById('ep-s').value;
+  const rawRate = document.getElementById('er-i') ? +document.getElementById('er-i').value : +document.getElementById('er-s').value;
+  const rawYr = document.getElementById('eyr-i') ? +document.getElementById('eyr-i').value : +document.getElementById('eyr-s').value;
+  const rawMo = document.getElementById('emo-i') ? +document.getElementById('emo-i').value : +document.getElementById('emo-s').value;
+
+  const P = Math.min(Math.max(rawP, 1000), 100000000);
+  const annualRate = Math.min(Math.max(rawRate, 0.1), 30);
+  const yr = Math.min(Math.max(rawYr, 0), 40);
+  const mo = Math.min(Math.max(rawMo, 0), 11);
   const r = annualRate / 100 / 12;
-  const yr = document.getElementById('eyr-i') ? +document.getElementById('eyr-i').value : +document.getElementById('eyr-s').value;
-  const mo = document.getElementById('emo-i') ? +document.getElementById('emo-i').value : +document.getElementById('emo-s').value;
   const n = yr * 12 + mo;
 
   const extraMonthly = parseFloat(document.getElementById('prepay-monthly')?.value) || 0;
@@ -1166,6 +1206,7 @@ function ce() {
   tb.innerHTML = '';
 
   let bal = P;
+  let allRowsHtml = '';
   if (emiMode === 'yr') {
     let currMonth = 0;
     let y = 1;
@@ -1192,7 +1233,7 @@ function ce() {
 
         const d = new Date(baseDate.getFullYear(), baseDate.getMonth() + currMonth - 1, 1);
         const dStr = d.toLocaleString('default', { month: 'short', year: 'numeric' });
-        monthRowsHtml += `<tr class="month-subrow">
+        monthRowsHtml += `<tr class="month-subrow ymonths-group-${y}" style="display:none">
           <td>${dStr}</td>
           <td class="tg">${fmt(pp)}</td>
           <td class="tr">${fmt(ip)}</td>
@@ -1201,17 +1242,15 @@ function ce() {
         </tr>`;
       }
 
-      tb.innerHTML += `
-        <tr class="year-row" id="yrow-${y}" onclick="toggleYearAmortization(${y})" title="Click to view 12 months details">
+      allRowsHtml += `
+        <tr class="year-row" id="yrow-${y}" data-action="toggle-year" data-val="${y}" aria-expanded="false" title="Click to view 12 months details">
           <td><span class="expand-chevron">▶</span> Year ${y} <span style="font-size:0.7rem;color:var(--text3)">(${mInYear} mos)</span></td>
           <td class="tg">${fmt(yp)}</td>
           <td class="tr">${fmt(yi)}</td>
           <td>${fmt(yPay)}</td>
           <td class="tb">${fmt(Math.max(0, bal))}</td>
         </tr>
-        <tbody id="ymonths-${y}" style="display:none">
-          ${monthRowsHtml}
-        </tbody>
+        ${monthRowsHtml}
       `;
       y++;
     }
@@ -1227,7 +1266,7 @@ function ce() {
       bal -= pp;
       const d = new Date(baseDate.getFullYear(), baseDate.getMonth() + m - 1, 1);
       const dStr = d.toLocaleString('default', { month: 'short', year: 'numeric' });
-      tb.innerHTML += `<tr>
+      allRowsHtml += `<tr>
         <td>${dStr}</td>
         <td class="tg">${fmt(pp)}</td>
         <td class="tr">${fmt(ip)}</td>
@@ -1236,15 +1275,22 @@ function ce() {
       </tr>`;
     }
   }
+  tb.innerHTML = allRowsHtml;
   savePreferences();
 }
+const ce = calculateEMI;
 
 // ─── SIP CALCULATOR ───
-function cs() {
-  const M = document.getElementById('sa-i') ? +document.getElementById('sa-i').value : +document.getElementById('sa-s').value;
-  const r = (document.getElementById('sr-i') ? +document.getElementById('sr-i').value : +document.getElementById('sr-s').value) / 100 / 12;
-  const yr = document.getElementById('st-i') ? +document.getElementById('st-i').value : +document.getElementById('st-s').value;
-  const su = (document.getElementById('ss-i') ? +document.getElementById('ss-i').value : +document.getElementById('ss-s').value) / 100;
+function calculateSIP() {
+  const rawM = document.getElementById('sa-i') ? +document.getElementById('sa-i').value : +document.getElementById('sa-s').value;
+  const rawR = document.getElementById('sr-i') ? +document.getElementById('sr-i').value : +document.getElementById('sr-s').value;
+  const rawYr = document.getElementById('st-i') ? +document.getElementById('st-i').value : +document.getElementById('st-s').value;
+  const rawSu = document.getElementById('ss-i') ? +document.getElementById('ss-i').value : +document.getElementById('ss-s').value;
+
+  const M = Math.min(Math.max(rawM, 100), 10000000);
+  const r = Math.min(Math.max(rawR, 0.1), 35) / 100 / 12;
+  const yr = Math.min(Math.max(rawYr, 1), 40);
+  const su = Math.min(Math.max(rawSu, 0), 50) / 100;
 
   if (isNaN(M) || M <= 0 || isNaN(yr) || yr <= 0 || isNaN(r) || r < 0) {
     document.getElementById('s-tot').textContent = '₹0';
@@ -1280,6 +1326,7 @@ function cs() {
   const tb = document.getElementById('s-tbody');
   tb.innerHTML = '';
   const sipChartData = [];
+  let sipRowsHtml = '';
   for (let y = 1; y <= yr; y++) {
     let yi = 0;
     for (let m = 0; m < 12; m++) {
@@ -1289,7 +1336,7 @@ function cs() {
     }
     mon *= (1 + su);
     sipChartData.push({ year: y, invested: ci, val: val, gains: Math.max(0, val - ci) });
-    tb.innerHTML += `<tr>
+    sipRowsHtml += `<tr>
       <td>Year ${y}</td>
       <td>${fmt(yi)}</td>
       <td>${fmt(ci)}</td>
@@ -1297,10 +1344,12 @@ function cs() {
       <td class="tg">${fmt(val - ci)}</td>
     </tr>`;
   }
+  tb.innerHTML = sipRowsHtml;
   window._lastSipChartData = sipChartData;
   drawSipChart(sipChartData);
   savePreferences();
 }
+const cs = calculateSIP;
 
 // ─── FIXED DEPOSIT (FD) ───
 let fdc = 4;
@@ -1308,13 +1357,18 @@ function setFDC(n, el) {
   el.closest('.chip-row').querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   fdc = n;
-  cf();
+  calculateFD();
   savePreferences();
 }
-function cf() {
-  const P = document.getElementById('fp-i') ? +document.getElementById('fp-i').value : +document.getElementById('fp-s').value;
-  const r = (document.getElementById('fr-i') ? +document.getElementById('fr-i').value : +document.getElementById('fr-s').value) / 100;
-  const t = document.getElementById('ft-i') ? +document.getElementById('ft-i').value : +document.getElementById('ft-s').value;
+
+function calculateFD() {
+  const rawP = document.getElementById('fp-i') ? +document.getElementById('fp-i').value : +document.getElementById('fp-s').value;
+  const rawR = document.getElementById('fr-i') ? +document.getElementById('fr-i').value : +document.getElementById('fr-s').value;
+  const rawT = document.getElementById('ft-i') ? +document.getElementById('ft-i').value : +document.getElementById('ft-s').value;
+
+  const P = Math.min(Math.max(rawP, 100), 100000000);
+  const r = Math.min(Math.max(rawR, 0.1), 30) / 100;
+  const t = Math.min(Math.max(rawT, 0.1), 30);
 
   if (isNaN(P) || P <= 0 || isNaN(t) || t <= 0 || isNaN(r) || r < 0) {
     document.getElementById('f-mat').textContent = '₹0';
@@ -1340,12 +1394,17 @@ function cf() {
   if (intPctEl) intPctEl.textContent = A > 0 ? ((int / A) * 100).toFixed(0) + '%' : '—';
   savePreferences();
 }
+const cf = calculateFD;
 
 // ─── RECURRING DEPOSIT (RD) ───
-function cr() {
-  const M = document.getElementById('ra-i') ? +document.getElementById('ra-i').value : +document.getElementById('ra-s').value;
-  const mr = (document.getElementById('rr-i') ? +document.getElementById('rr-i').value : +document.getElementById('rr-s').value) / 100 / 12;
-  const yr = document.getElementById('rt-i') ? +document.getElementById('rt-i').value : +document.getElementById('rt-s').value;
+function calculateRD() {
+  const rawM = document.getElementById('ra-i') ? +document.getElementById('ra-i').value : +document.getElementById('ra-s').value;
+  const rawR = document.getElementById('rr-i') ? +document.getElementById('rr-i').value : +document.getElementById('rr-s').value;
+  const rawYr = document.getElementById('rt-i') ? +document.getElementById('rt-i').value : +document.getElementById('rt-s').value;
+
+  const M = Math.min(Math.max(rawM, 100), 10000000);
+  const mr = Math.min(Math.max(rawR, 0.1), 30) / 100 / 12;
+  const yr = Math.min(Math.max(rawYr, 0.25), 30);
 
   if (isNaN(M) || M <= 0 || isNaN(yr) || yr <= 0 || isNaN(mr) || mr < 0) {
     document.getElementById('r-mat').textContent = '₹0';
@@ -1376,13 +1435,19 @@ function cr() {
   if (intPctEl) intPctEl.textContent = bal > 0 ? ((ret / bal) * 100).toFixed(0) + '%' : '—';
   savePreferences();
 }
+const cr = calculateRD;
 
 // ─── LUMPSUM ───
-function cl() {
-  const P = document.getElementById('la-i') ? +document.getElementById('la-i').value : +document.getElementById('la-s').value;
-  const r = (document.getElementById('lr-i') ? +document.getElementById('lr-i').value : +document.getElementById('lr-s').value) / 100;
-  const t = document.getElementById('lt-i') ? +document.getElementById('lt-i').value : +document.getElementById('lt-s').value;
-  const inf = (document.getElementById('li-i') ? +document.getElementById('li-i').value : +document.getElementById('li-s').value) / 100;
+function calculateLumpsum() {
+  const rawP = document.getElementById('la-i') ? +document.getElementById('la-i').value : +document.getElementById('la-s').value;
+  const rawR = document.getElementById('lr-i') ? +document.getElementById('lr-i').value : +document.getElementById('lr-s').value;
+  const rawT = document.getElementById('lt-i') ? +document.getElementById('lt-i').value : +document.getElementById('lt-s').value;
+  const rawInf = document.getElementById('li-i') ? +document.getElementById('li-i').value : +document.getElementById('li-s').value;
+
+  const P = Math.min(Math.max(rawP, 100), 100000000);
+  const r = Math.min(Math.max(rawR, 0.1), 40) / 100;
+  const t = Math.min(Math.max(rawT, 0.1), 50);
+  const inf = Math.min(Math.max(rawInf, 0), 25) / 100;
 
   if (isNaN(P) || P <= 0 || isNaN(t) || t <= 0 || isNaN(r) || r < 0) {
     document.getElementById('l-fv').textContent = '₹0';
@@ -1410,11 +1475,16 @@ function cl() {
   if (gainPctEl) gainPctEl.textContent = fv > 0 ? ((g / fv) * 100).toFixed(0) + '%' : '—';
   savePreferences();
 }
+const cl = calculateLumpsum;
 
 // ─── COMPARE INVESTMENTS ───
-function cmp() {
-  const P = document.getElementById('ca-i') ? +document.getElementById('ca-i').value : +document.getElementById('ca-s').value;
-  const T = document.getElementById('ct-i') ? +document.getElementById('ct-i').value : +document.getElementById('ct-s').value;
+function compareInvestments() {
+  const rawP = document.getElementById('ca-i') ? +document.getElementById('ca-i').value : +document.getElementById('ca-s').value;
+  const rawT = document.getElementById('ct-i') ? +document.getElementById('ct-i').value : +document.getElementById('ct-s').value;
+
+  const P = Math.min(Math.max(rawP, 1000), 100000000);
+  const T = Math.min(Math.max(rawT, 1), 40);
+
   if (isNaN(P) || P <= 0 || isNaN(T) || T <= 0) {
     const grid = document.getElementById('cmp-grid');
     if (grid) grid.innerHTML = '<div style="color:var(--text3);padding:24px;text-align:center;grid-column:1/-1">Please enter a valid investment amount and tenure.</div>';
@@ -1461,6 +1531,7 @@ function cmp() {
     </tr>`).join('');
   savePreferences();
 }
+const cmp = compareInvestments;
 
 // ─── LOAN COMPARISON ───
 const compareLoans = [
@@ -1477,10 +1548,21 @@ function calcEMIval(P, r, n) {
   return P * mr * pow / (pow - 1);
 }
 
-function cmpLoan() {
-  const P = document.getElementById('cl-p-i') ? +document.getElementById('cl-p-i').value : +document.getElementById('cl-p-s').value;
-  const T = document.getElementById('cl-t-i') ? +document.getElementById('cl-t-i').value : +document.getElementById('cl-t-s').value;
+function compareLoanProducts() {
+  const rawP = document.getElementById('cl-p-i') ? +document.getElementById('cl-p-i').value : +document.getElementById('cl-p-s').value;
+  const rawT = document.getElementById('cl-t-i') ? +document.getElementById('cl-t-i').value : +document.getElementById('cl-t-s').value;
+
+  const P = Math.min(Math.max(rawP, 1000), 100000000);
+  const T = Math.min(Math.max(rawT, 1), 30);
   const n = T * 12;
+
+  // Read customizable loan comparison rates from inputs if present
+  const rHome = parseFloat(document.getElementById('cl-r1-i')?.value);
+  const rCar = parseFloat(document.getElementById('cl-r2-i')?.value);
+  const rPersonal = parseFloat(document.getElementById('cl-r3-i')?.value);
+  if (!isNaN(rHome) && rHome > 0) compareLoans[0].rate = Math.min(Math.max(rHome, 0.1), 40);
+  if (!isNaN(rCar) && rCar > 0) compareLoans[1].rate = Math.min(Math.max(rCar, 0.1), 40);
+  if (!isNaN(rPersonal) && rPersonal > 0) compareLoans[2].rate = Math.min(Math.max(rPersonal, 0.1), 40);
 
   if (isNaN(P) || isNaN(T) || n <= 0 || P < 100) {
     document.getElementById('loan-cmp-cards').innerHTML = '<div style="color:var(--text3);padding:24px;text-align:center;grid-column:1/-1">Please enter a loan amount of at least ₹100 and valid tenure.</div>';
@@ -1528,10 +1610,11 @@ function cmpLoan() {
       </td>
     </tr>`).join('');
 
-  // Year-wise interest outflow
+  // Year-wise interest outflow (build HTML string first for O(1) DOM insert)
   const ytbody = document.getElementById('loan-cmp-year-tbody');
   ytbody.innerHTML = '';
   const bals = compareLoans.map(l => ({ bal: P, mr: l.rate / 100 / 12, emi: calcEMIval(P, l.rate, n) }));
+  let yrowsHtml = '';
   for (let y = 1; y <= T; y++) {
     const ints = bals.map(b => {
       let yi = 0;
@@ -1544,7 +1627,7 @@ function cmpLoan() {
     });
     const minInt = Math.min(...ints);
     const cheapIdx = ints.indexOf(minInt);
-    ytbody.innerHTML += `<tr>
+    yrowsHtml += `<tr>
       <td>Year ${y}</td>
       <td style="color:#0057d9;font-weight:600">${fmt(ints[0])}</td>
       <td style="color:#00b386;font-weight:600">${fmt(ints[1])}</td>
@@ -1552,8 +1635,10 @@ function cmpLoan() {
       <td><span class="price-tag tag-profit">${compareLoans[cheapIdx].icon} ${compareLoans[cheapIdx].name.split(' ')[0]}</span></td>
     </tr>`;
   }
+  ytbody.innerHTML = yrowsHtml;
   savePreferences();
 }
+const cmpLoan = compareLoanProducts;
 
 // ─── STOCK AVERAGE CALCULATOR ───
 let avgType = 'stock';
@@ -1584,12 +1669,12 @@ function addAvgRow(qty = '', price = '') {
   div.innerHTML = `
     <div class="buy-num">${n}</div>
     <div class="inp-wrap">
-      <input class="inp" type="number" id="avg-qty-${n}" value="${qty}" min="0" placeholder="0" oninput="calcAvg()" style="text-align:center">
+      <input class="inp" type="number" id="avg-qty-${n}" value="${qty}" min="0" placeholder="0" data-calc="avg" style="text-align:center" aria-label="Quantity for tranche ${n}">
     </div>
     <div class="inp-wrap">
-      <input class="inp" type="number" id="avg-price-${n}" value="${price}" min="0" placeholder="0.00" step="0.01" oninput="calcAvg()" style="text-align:center">
+      <input class="inp" type="number" id="avg-price-${n}" value="${price}" min="0" placeholder="0.00" step="0.01" data-calc="avg" style="text-align:center" aria-label="Buy price for tranche ${n}">
     </div>
-    <button class="del-btn" onclick="removeAvgRow(${n})" title="Remove">×</button>`;
+    <button type="button" class="del-btn" data-action="remove-avg-row" data-val="${n}" title="Remove" aria-label="Remove buy tranche ${n}">×</button>`;
   document.getElementById('avg-rows').appendChild(div);
   calcAvg();
   savePreferences();
@@ -2044,6 +2129,8 @@ function copyTextSafe(text, successMsg) {
   }
 }
 
+// Fallback clipboard copying for legacy browsers where navigator.clipboard is unavailable
+// Note: document.execCommand('copy') is deprecated in modern specifications but retained here solely as an offline/legacy fallback
 function execFallbackCopy(text, successMsg) {
   try {
     const ta = document.createElement('textarea');
@@ -2568,7 +2655,7 @@ function applyUpdate() {
   if (newWorkerWaiting) {
     newWorkerWaiting.postMessage({ action: 'skipWaiting' });
   } else {
-    window.location.reload(true);
+    window.location.reload();
   }
 }
 
@@ -2593,14 +2680,14 @@ function forceCheckUpdate() {
             if (refreshBtn) refreshBtn.style.transform = 'none';
           }, 800);
         }).catch(() => {
-          window.location.reload(true);
+          window.location.reload();
         });
       } else {
-        window.location.reload(true);
+        window.location.reload();
       }
     });
   } else {
-    window.location.reload(true);
+    window.location.reload();
   }
 }
 
@@ -2654,10 +2741,13 @@ if ('serviceWorker' in navigator) {
 // ─── EXPANDABLE AMORTIZATION YEAR ROWS ───
 function toggleYearAmortization(y) {
   const row = document.getElementById('yrow-' + y);
-  const tbody = document.getElementById('ymonths-' + y);
-  if (!row || !tbody) return;
+  if (!row) return;
   const isExpanded = row.classList.toggle('expanded');
-  tbody.style.display = isExpanded ? '' : 'none';
+  row.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+  const monthRows = document.querySelectorAll('.ymonths-group-' + y);
+  monthRows.forEach(r => {
+    r.style.display = isExpanded ? '' : 'none';
+  });
 }
 
 // ─── HOME LOAN TAX BENEFIT ENGINE (SEC 24B & 80C) ───
@@ -2778,24 +2868,233 @@ function initDonutTooltips() {
   });
 }
 
+// ─── CENTRALIZED DECLARATIVE EVENT DISPATCHER ───
+function handleAction(action, val, target, el, e) {
+  switch (action) {
+    case 'toggle-theme':
+      toggleTheme();
+      break;
+    case 'refresh':
+      forceCheckUpdate();
+      break;
+    case 'apply-update':
+      applyUpdate();
+      break;
+    case 'open-export-modal':
+      openExportModal(val);
+      break;
+    case 'close-export-modal':
+      closeExportModal();
+      break;
+    case 'do-export-csv':
+      doExportCSV();
+      break;
+    case 'share-calc':
+      shareCurrentCalc();
+      break;
+    case 'install-guide':
+      showInstallGuide();
+      break;
+    case 'close-install-guide':
+      closeInstallGuide();
+      break;
+    case 'copy-summary':
+      copySummaryText();
+      break;
+    case 'copy-table':
+      copyTableToClipboard();
+      break;
+    case 'trigger-print':
+      triggerPrint(val);
+      break;
+    case 'share-image':
+      shareAsImage(val);
+      break;
+    case 'scroll-emi-results':
+      scrollToEmiResults();
+      break;
+    case 'toggle-accordion':
+      toggleAccordion(target || val);
+      break;
+    case 'set-emi-mode':
+      setEmiMode(val, el);
+      break;
+    case 'set-export-emi-mode':
+      setExportEmiMode(val);
+      break;
+    case 'set-loan-preset':
+      setLoan(val, el);
+      break;
+    case 'set-loan-amount':
+      setLoanAmount(parseFloat(val));
+      break;
+    case 'set-loan-rate':
+      setLoanRate(parseFloat(val));
+      break;
+    case 'set-loan-tenure':
+      setLoanTenure(parseFloat(val));
+      break;
+    case 'set-sip-monthly':
+      setSipMonthly(parseFloat(val));
+      break;
+    case 'set-sip-rate':
+      setSipRate(parseFloat(val));
+      break;
+    case 'set-sip-tenure':
+      setSipTenure(parseFloat(val));
+      break;
+    case 'set-fdc':
+      setFDC(parseInt(val, 10), el);
+      break;
+    case 'set-tax-slab':
+      setTaxSlab(parseInt(val, 10), el);
+      break;
+    case 'set-avg-type':
+      setAvgType(val, el);
+      break;
+    case 'add-avg-row':
+      addAvgRow();
+      break;
+    case 'remove-avg-row':
+      removeAvgRow(parseInt(val, 10));
+      break;
+    case 'switch-invest-sub':
+      switchInvestSub(val, el);
+      break;
+    case 'toggle-year':
+      toggleYearAmortization(parseInt(val, 10));
+      break;
+  }
+}
+
+function runCalculatorByName(name) {
+  switch (name) {
+    case 'emi':
+    case 'ce':
+      calculateEMI();
+      break;
+    case 'sip':
+    case 'cs':
+      calculateSIP();
+      break;
+    case 'fd':
+    case 'cf':
+      calculateFD();
+      break;
+    case 'rd':
+    case 'cr':
+      calculateRD();
+      break;
+    case 'lumpsum':
+    case 'cl':
+      calculateLumpsum();
+      break;
+    case 'cmp':
+      compareInvestments();
+      break;
+    case 'cmpLoan':
+      compareLoans();
+      break;
+    case 'avg':
+      calcAvg();
+      break;
+    case 'afford':
+      updateAffordability();
+      break;
+  }
+}
+
+function initAppEventListeners() {
+  // Global click delegation
+  document.addEventListener('click', (e) => {
+    const actionEl = e.target.closest('[data-action]');
+    if (actionEl) {
+      const action = actionEl.dataset.action;
+      const val = actionEl.dataset.val;
+      const target = actionEl.dataset.target;
+      handleAction(action, val, target, actionEl, e);
+      return;
+    }
+
+    // Modal background click to close
+    if (e.target.classList.contains('modal-overlay')) {
+      if (e.target.id === 'exportModal' || e.target.id === 'export-modal') closeExportModal();
+      if (e.target.id === 'installModal' || e.target.id === 'installGuideModal') closeInstallGuide();
+    }
+  });
+
+  // Global input & change delegation for paired sliders and number inputs
+  document.addEventListener('input', (e) => {
+    const el = e.target;
+    // Input syncing to slider
+    if (el.dataset.sync) {
+      const sId = el.dataset.sync;
+      const mn = el.dataset.min ? parseFloat(el.dataset.min) : undefined;
+      const mx = el.dataset.max ? parseFloat(el.dataset.max) : undefined;
+      syncSliderToInput(el.id, sId, mn, mx);
+      if (el.dataset.calc) runCalculatorByName(el.dataset.calc);
+      return;
+    }
+    // Slider syncing to input
+    if (el.dataset.syncInput) {
+      const iId = el.dataset.syncInput;
+      syncInputToSlider(el.id, iId);
+      if (el.dataset.calc) runCalculatorByName(el.dataset.calc);
+      return;
+    }
+    // Direct calculation triggering on input
+    if (el.dataset.calc) {
+      runCalculatorByName(el.dataset.calc);
+      return;
+    }
+  });
+
+  // Clamp input values on blur/change
+  document.addEventListener('change', (e) => {
+    const el = e.target;
+    if (el.dataset.sync && (el.dataset.min || el.dataset.max)) {
+      const mn = el.dataset.min ? parseFloat(el.dataset.min) : 0;
+      const mx = el.dataset.max ? parseFloat(el.dataset.max) : Infinity;
+      clampInputValue(el.id, mn, mx);
+      syncSliderToInput(el.id, el.dataset.sync, mn, mx);
+      if (el.dataset.calc) runCalculatorByName(el.dataset.calc);
+    }
+  });
+}
+
 // ─── SELF-DOCUMENTING FUNCTION ALIASES ───
-window.calculateEMI = ce;
-window.calculateSIP = cs;
-window.calculateFD = cf;
-window.calculateRD = cr;
-window.calculateLumpsum = cl;
-window.compareInvestments = cmp;
-window.compareLoans = cmpLoan;
-window.syncSliderToInput = s2i;
-window.syncInputToSlider = i2s;
+window.calculateEMI = calculateEMI;
+window.calculateSIP = calculateSIP;
+window.calculateFD = calculateFD;
+window.calculateRD = calculateRD;
+window.calculateLumpsum = calculateLumpsum;
+window.compareInvestments = compareInvestments;
+window.compareLoans = compareLoanProducts;
+window.syncSliderToInput = syncSliderToInput;
+window.syncInputToSlider = syncInputToSlider;
 window.toggleYearAmortization = toggleYearAmortization;
 window.setTaxSlab = setTaxSlab;
 window.updateTaxBenefits = updateTaxBenefits;
 window.shareAsImage = shareAsImage;
 window.scrollToEmiResults = scrollToEmiResults;
 window.updateAffordability = updateAffordability;
+window.ce = calculateEMI;
+window.cs = calculateSIP;
+window.cf = calculateFD;
+window.cr = calculateRD;
+window.cl = calculateLumpsum;
+window.cmp = compareInvestments;
+window.cmpLoan = compareLoanProducts;
+window.s2i = syncSliderToInput;
+window.i2s = syncInputToSlider;
+window.fmtC = fmtC;
 
-// Attach tooltip and initial chart redraw on window load
+// Attach listeners, tooltips and initial chart redraw on DOM ready
+document.addEventListener('DOMContentLoaded', initAppEventListeners);
+if (document.readyState === 'interactive' || document.readyState === 'complete') {
+  initAppEventListeners();
+}
+
 window.addEventListener('load', () => {
   setTimeout(() => {
     initDonutTooltips();

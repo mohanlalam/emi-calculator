@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' 'unsafe-inline' blob:; img-src 'self' data: blob:; connect-src 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' blob:; img-src 'self' data: blob:; connect-src 'self';">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -11,6 +11,16 @@
 <meta name="application-name" content="EMI Calc">
 <meta name="theme-color" content="#060e1e" id="theme-color-meta">
 <meta name="description" content="All-in-one EMI, Prepayment, SIP, FD, RD, Lumpsum & Stock Average Calculator for iOS & Web">
+
+<!-- Open Graph & Social Sharing Meta Tags -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="EMI &amp; Finance Calculator">
+<meta property="og:description" content="All-in-one EMI, Prepayment, SIP, FD, RD, Lumpsum &amp; Stock Average Calculator for iOS &amp; Web">
+<meta property="og:image" content="./icon-512.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="EMI &amp; Finance Calculator">
+<meta name="twitter:description" content="All-in-one EMI, Prepayment, SIP, FD, RD, Lumpsum &amp; Stock Average Calculator for iOS &amp; Web">
+<meta name="twitter:image" content="./icon-512.png">
 
 <!-- PWA and iOS Icons (Relative paths for GitHub Pages) -->
 <link rel="manifest" href="./manifest.json">
@@ -43,7 +53,7 @@
 </div>
 
 <!-- UPDATE BANNER -->
-<div id="update-banner" style="display:none;background:linear-gradient(90deg,#00b386,#009973);color:#fff;padding:10px 16px;text-align:center;font-size:0.84rem;font-weight:700;position:sticky;top:0;z-index:999;box-shadow:0 2px 10px rgba(0,0,0,0.15);cursor:pointer" onclick="applyUpdate()">
+<div id="update-banner" style="display:none;background:linear-gradient(90deg,#00b386,#009973);color:#fff;padding:10px 16px;text-align:center;font-size:0.84rem;font-weight:700;position:sticky;top:0;z-index:999;box-shadow:0 2px 10px rgba(0,0,0,0.15);cursor:pointer" data-action="apply-update" role="alert">
   ⚡ New update available! Tap here to reload
 </div>
 
@@ -51,7 +61,7 @@
 <header class="topbar">
   <div class="topbar-container">
     <div class="brand-area">
-      <div class="brand-icon">
+      <div class="brand-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/></svg>
       </div>
       <div>
@@ -62,55 +72,55 @@
 
     <div class="header-actions">
       <!-- Refresh / Check update button -->
-      <button class="icon-btn" id="refresh-btn" onclick="forceCheckUpdate()" title="Check for Updates" aria-label="Check Updates">
+      <button class="icon-btn" id="refresh-btn" data-action="refresh" title="Check for Updates" aria-label="Check Updates">
         <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       </button>
 
       <!-- Dark mode toggle -->
-      <button class="icon-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode" aria-label="Toggle Theme">
+      <button class="icon-btn" id="theme-toggle" data-action="toggle-theme" title="Toggle Dark/Light Mode" aria-label="Toggle Dark and Light Mode">
         <svg class="sun-icon" viewBox="0 0 24 24" style="display:none;"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
         <svg class="moon-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
 
       <!-- Export / Print Modal button -->
-      <button class="icon-btn" onclick="openExportModal()" title="Export &amp; Print Report" aria-label="Export and Print">
+      <button class="icon-btn" data-action="open-export-modal" title="Export &amp; Print Report" aria-label="Export and Print Report">
         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </button>
 
       <!-- Share button -->
-      <button class="icon-btn" onclick="shareCurrentCalc()" title="Share Calculation" aria-label="Share">
+      <button class="icon-btn" data-action="share-calc" title="Share Calculation" aria-label="Share Calculation">
         <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
       </button>
 
       <!-- Install / iOS Help button -->
-      <button class="icon-btn" onclick="showInstallGuide()" title="Install App" aria-label="Install App">
+      <button class="icon-btn" data-action="install-guide" title="Install App" aria-label="Install App Guidance">
         <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/><polyline points="9 9 12 12 15 9"/><line x1="12" y1="6" x2="12" y2="12"/></svg>
       </button>
     </div>
   </div>
 
   <!-- Desktop Tab Navigation -->
-  <div class="desktop-nav" id="desktopNav">
-    <button class="nav-tab-btn active" data-tab="emi">🏠 EMI Calculator</button>
-    <button class="nav-tab-btn" data-tab="sip">📈 SIP Calculator</button>
-    <button class="nav-tab-btn" data-tab="compare-loan">🏦 Loan Comparison</button>
-    <button class="nav-tab-btn" data-tab="investments">💼 Investment Suite</button>
-    <button class="nav-tab-btn" data-tab="avg">⚖️ Stock Average</button>
+  <div class="desktop-nav" id="desktopNav" role="tablist" aria-label="Financial Calculators">
+    <button class="nav-tab-btn active" role="tab" id="tab-nav-emi" aria-selected="true" aria-controls="tab-emi" data-tab="emi">🏠 EMI Calculator</button>
+    <button class="nav-tab-btn" role="tab" id="tab-nav-sip" aria-selected="false" aria-controls="tab-sip" data-tab="sip">📈 SIP Calculator</button>
+    <button class="nav-tab-btn" role="tab" id="tab-nav-loans" aria-selected="false" aria-controls="tab-compare-loan" data-tab="compare-loan">🏦 Loan Comparison</button>
+    <button class="nav-tab-btn" role="tab" id="tab-nav-invest" aria-selected="false" aria-controls="tab-investments" data-tab="investments">💼 Investment Suite</button>
+    <button class="nav-tab-btn" role="tab" id="tab-nav-avg" aria-selected="false" aria-controls="tab-avg" data-tab="avg">⚖️ Stock Average</button>
   </div>
 </header>
 
 <!-- ══════════════ TAB 1: EMI CALCULATOR ══════════════ -->
-<main class="calc-panel active" id="tab-emi">
+<main class="calc-panel active" id="tab-emi" role="tabpanel" aria-labelledby="tab-nav-emi">
   <div class="page-head">
     <div class="page-title">
-      <span>Loan EMI Calculator</span>
+      <h1>Loan EMI Calculator</h1>
     </div>
     <div class="amort-actions">
-      <button class="btn-sm" onclick="openExportModal('emi')">
+      <button class="btn-sm" data-action="open-export-modal" data-val="emi" aria-label="Export EMI CSV">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export CSV
       </button>
-      <button class="btn-sm" onclick="triggerPrint('emi')">
+      <button class="btn-sm" data-action="trigger-print" data-val="emi" aria-label="Print EMI Report">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         Print / PDF
       </button>
@@ -121,9 +131,9 @@
     <!-- Inputs Card -->
     <div class="card">
       <div class="chip-row">
-        <button class="chip active" onclick="setLoan('home',this)">🏠 Home Loan</button>
-        <button class="chip" onclick="setLoan('car',this)">🚗 Car Loan</button>
-        <button class="chip" onclick="setLoan('personal',this)">👤 Personal Loan</button>
+        <button class="chip active" data-action="set-loan-preset" data-val="home">🏠 Home Loan</button>
+        <button class="chip" data-action="set-loan-preset" data-val="car">🚗 Car Loan</button>
+        <button class="chip" data-action="set-loan-preset" data-val="personal">👤 Personal Loan</button>
       </div>
 
       <!-- Loan Amount -->
@@ -131,26 +141,26 @@
         <div class="field-head">
           <label class="field-lbl" for="ep-i">Loan Amount</label>
           <div class="quick-presets">
-            <span class="preset-chip" onclick="setLoanAmount(1000000)">₹10L</span>
-            <span class="preset-chip" onclick="setLoanAmount(2500000)">₹25L</span>
-            <span class="preset-chip" onclick="setLoanAmount(5000000)">₹50L</span>
-            <span class="preset-chip" onclick="setLoanAmount(10000000)">₹1Cr</span>
+            <button type="button" class="preset-chip" data-action="set-loan-amount" data-val="1000000" aria-label="Set Loan Amount to 10 Lakhs">₹10L</button>
+            <button type="button" class="preset-chip" data-action="set-loan-amount" data-val="2500000" aria-label="Set Loan Amount to 25 Lakhs">₹25L</button>
+            <button type="button" class="preset-chip" data-action="set-loan-amount" data-val="5000000" aria-label="Set Loan Amount to 50 Lakhs">₹50L</button>
+            <button type="button" class="preset-chip" data-action="set-loan-amount" data-val="10000000" aria-label="Set Loan Amount to 1 Crore">₹1Cr</button>
           </div>
         </div>
         <div class="inp-wrap">
           <span class="inp-pfx">₹</span>
-          <input class="inp" type="number" id="ep-i" value="5000000" min="10000" max="100000000" oninput="s2i('ep-i','ep-s',100000,1e8);ce()">
+          <input class="inp" type="number" id="ep-i" value="5000000" min="100000" max="100000000" aria-label="Loan Amount Input" data-sync="ep-s" data-min="100000" data-max="100000000" data-calc="emi">
         </div>
         <div class="sl-wrap">
-          <input type="range" id="ep-s" aria-label="Loan amount slider" min="100000" max="100000000" step="50000" value="5000000" oninput="i2s('ep-s','ep-i');ce()">
+          <input type="range" id="ep-s" aria-label="Loan amount slider" min="100000" max="100000000" step="50000" value="5000000" data-sync-input="ep-i" data-calc="emi">
           <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Crore</span></div>
           <div class="sl-milestones">
-            <button type="button" class="sl-milestone-btn" onclick="setLoanAmount(1000000)">10L</button>
-            <button type="button" class="sl-milestone-btn" onclick="setLoanAmount(2500000)">25L</button>
-            <button type="button" class="sl-milestone-btn" onclick="setLoanAmount(5000000)">50L</button>
-            <button type="button" class="sl-milestone-btn" onclick="setLoanAmount(7500000)">75L</button>
-            <button type="button" class="sl-milestone-btn" onclick="setLoanAmount(10000000)">1Cr</button>
-            <button type="button" class="sl-milestone-btn" onclick="setLoanAmount(20000000)">2Cr</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-amount" data-val="1000000">10L</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-amount" data-val="2500000">25L</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-amount" data-val="5000000">50L</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-amount" data-val="7500000">75L</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-amount" data-val="10000000">1Cr</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-amount" data-val="20000000">2Cr</button>
           </div>
         </div>
       </div>
@@ -160,25 +170,25 @@
         <div class="field-head">
           <label class="field-lbl" for="er-i">Interest Rate (p.a)</label>
           <div class="quick-presets">
-            <span class="preset-chip" onclick="setLoanRate(8.5)">8.5%</span>
-            <span class="preset-chip" onclick="setLoanRate(9.0)">9.0%</span>
-            <span class="preset-chip" onclick="setLoanRate(10.5)">10.5%</span>
-            <span class="preset-chip" onclick="setLoanRate(14.0)">14%</span>
+            <button type="button" class="preset-chip" data-action="set-loan-rate" data-val="8.5" aria-label="Set Interest Rate to 8.5%">8.5%</button>
+            <button type="button" class="preset-chip" data-action="set-loan-rate" data-val="9.0" aria-label="Set Interest Rate to 9.0%">9.0%</button>
+            <button type="button" class="preset-chip" data-action="set-loan-rate" data-val="10.5" aria-label="Set Interest Rate to 10.5%">10.5%</button>
+            <button type="button" class="preset-chip" data-action="set-loan-rate" data-val="14.0" aria-label="Set Interest Rate to 14%">14%</button>
           </div>
         </div>
         <div class="inp-wrap">
-          <input class="inp" type="number" id="er-i" value="8.5" min="1" max="30" step="0.1" oninput="s2i('er-i','er-s',1,30);ce()">
+          <input class="inp" type="number" id="er-i" value="8.5" min="1" max="30" step="0.1" aria-label="Interest Rate Input" data-sync="er-s" data-min="1" data-max="30" data-calc="emi">
           <span class="inp-sfx">%</span>
         </div>
         <div class="sl-wrap">
-          <input type="range" id="er-s" aria-label="Interest rate slider" min="1" max="30" step="0.1" value="8.5" oninput="i2s('er-s','er-i');ce()">
+          <input type="range" id="er-s" aria-label="Interest rate slider" min="1" max="30" step="0.1" value="8.5" data-sync-input="er-i" data-calc="emi">
           <div class="sl-lbl"><span>1%</span><span>30%</span></div>
           <div class="sl-milestones">
-            <button type="button" class="sl-milestone-btn" onclick="setLoanRate(7.0)">7%</button>
-            <button type="button" class="sl-milestone-btn" onclick="setLoanRate(8.5)">8.5%</button>
-            <button type="button" class="sl-milestone-btn" onclick="setLoanRate(9.5)">9.5%</button>
-            <button type="button" class="sl-milestone-btn" onclick="setLoanRate(11.0)">11%</button>
-            <button type="button" class="sl-milestone-btn" onclick="setLoanRate(14.0)">14%</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-rate" data-val="7.0">7%</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-rate" data-val="8.5">8.5%</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-rate" data-val="9.5">9.5%</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-rate" data-val="11.0">11%</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-rate" data-val="14.0">14%</button>
           </div>
         </div>
       </div>
@@ -188,38 +198,38 @@
         <div class="field-head">
           <label class="field-lbl" for="eyr-i">Loan Tenure</label>
           <div class="quick-presets">
-            <span class="preset-chip" onclick="setLoanTenure(5)">5Y</span>
-            <span class="preset-chip" onclick="setLoanTenure(10)">10Y</span>
-            <span class="preset-chip" onclick="setLoanTenure(15)">15Y</span>
-            <span class="preset-chip" onclick="setLoanTenure(20)">20Y</span>
-            <span class="preset-chip" onclick="setLoanTenure(30)">30Y</span>
+            <button type="button" class="preset-chip" data-action="set-loan-tenure" data-val="5" aria-label="Set Tenure to 5 Years">5Y</button>
+            <button type="button" class="preset-chip" data-action="set-loan-tenure" data-val="10" aria-label="Set Tenure to 10 Years">10Y</button>
+            <button type="button" class="preset-chip" data-action="set-loan-tenure" data-val="15" aria-label="Set Tenure to 15 Years">15Y</button>
+            <button type="button" class="preset-chip" data-action="set-loan-tenure" data-val="20" aria-label="Set Tenure to 20 Years">20Y</button>
+            <button type="button" class="preset-chip" data-action="set-loan-tenure" data-val="30" aria-label="Set Tenure to 30 Years">30Y</button>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
             <div class="inp-wrap">
-              <input class="inp" type="number" id="eyr-i" value="20" min="0" max="40" oninput="s2i('eyr-i','eyr-s',0,40);ce()">
+              <input class="inp" type="number" id="eyr-i" value="20" min="0" max="40" aria-label="Loan Tenure Years" data-sync="eyr-s" data-min="0" data-max="40" data-calc="emi">
               <span class="inp-sfx">Years</span>
             </div>
             <div class="sl-wrap">
-              <input type="range" id="eyr-s" aria-label="Loan tenure years slider" min="0" max="40" step="1" value="20" oninput="i2s('eyr-s','eyr-i');ce()">
+              <input type="range" id="eyr-s" aria-label="Loan tenure years slider" min="0" max="40" step="1" value="20" data-sync-input="eyr-i" data-calc="emi">
               <div class="sl-lbl"><span>0</span><span>40 Yrs</span></div>
               <div class="sl-milestones">
-                <button type="button" class="sl-milestone-btn" onclick="setLoanTenure(5)">5Y</button>
-                <button type="button" class="sl-milestone-btn" onclick="setLoanTenure(10)">10Y</button>
-                <button type="button" class="sl-milestone-btn" onclick="setLoanTenure(15)">15Y</button>
-                <button type="button" class="sl-milestone-btn" onclick="setLoanTenure(20)">20Y</button>
-                <button type="button" class="sl-milestone-btn" onclick="setLoanTenure(30)">30Y</button>
+                <button type="button" class="sl-milestone-btn" data-action="set-loan-tenure" data-val="5">5Y</button>
+                <button type="button" class="sl-milestone-btn" data-action="set-loan-tenure" data-val="10">10Y</button>
+                <button type="button" class="sl-milestone-btn" data-action="set-loan-tenure" data-val="15">15Y</button>
+                <button type="button" class="sl-milestone-btn" data-action="set-loan-tenure" data-val="20">20Y</button>
+                <button type="button" class="sl-milestone-btn" data-action="set-loan-tenure" data-val="30">30Y</button>
               </div>
             </div>
           </div>
           <div>
             <div class="inp-wrap">
-              <input class="inp" type="number" id="emo-i" value="0" min="0" max="11" oninput="s2i('emo-i','emo-s',0,11);ce()">
+              <input class="inp" type="number" id="emo-i" value="0" min="0" max="11" aria-label="Loan Tenure Months" data-sync="emo-s" data-min="0" data-max="11" data-calc="emi">
               <span class="inp-sfx">Months</span>
             </div>
             <div class="sl-wrap">
-              <input type="range" id="emo-s" aria-label="Loan tenure months slider" min="0" max="11" step="1" value="0" oninput="i2s('emo-s','emo-i');ce()">
+              <input type="range" id="emo-s" aria-label="Loan tenure months slider" min="0" max="11" step="1" value="0" data-sync-input="emo-i" data-calc="emi">
               <div class="sl-lbl"><span>0</span><span>11 Mos</span></div>
             </div>
           </div>
@@ -228,7 +238,7 @@
 
       <!-- PREPAYMENT ACCORDION SIMULATOR -->
       <div class="accordion" id="prepay-accordion">
-        <div class="accordion-header" onclick="toggleAccordion('prepay-accordion')">
+        <div class="accordion-header" data-action="toggle-accordion" data-target="prepay-accordion" aria-expanded="false" role="button" tabindex="0">
           <div class="accordion-title">
             <span>⚡ Prepayment &amp; Part-Payment Planner</span>
           </div>
@@ -240,17 +250,17 @@
               Calculate how much interest and tenure you save by making extra payments.
             </div>
             <div class="field" style="margin-bottom:14px">
-              <label class="field-lbl">Extra Monthly Prepayment</label>
+              <label class="field-lbl" for="prepay-monthly">Extra Monthly Prepayment</label>
               <div class="inp-wrap">
                 <span class="inp-pfx">₹</span>
-                <input class="inp" type="number" id="prepay-monthly" value="0" min="0" step="500" placeholder="e.g. 5000" oninput="ce()">
+                <input class="inp" type="number" id="prepay-monthly" value="0" min="0" step="500" placeholder="e.g. 5000" aria-label="Extra Monthly Prepayment" data-calc="emi">
               </div>
             </div>
             <div class="field" style="margin-bottom:14px">
-              <label class="field-lbl">Extra Yearly Prepayment</label>
+              <label class="field-lbl" for="prepay-yearly">Extra Yearly Prepayment</label>
               <div class="inp-wrap">
                 <span class="inp-pfx">₹</span>
-                <input class="inp" type="number" id="prepay-yearly" value="0" min="0" step="5000" placeholder="e.g. 50000" oninput="ce()">
+                <input class="inp" type="number" id="prepay-yearly" value="0" min="0" step="5000" placeholder="e.g. 50000" aria-label="Extra Yearly Prepayment" data-calc="emi">
               </div>
             </div>
             <div class="prepay-savings-badge" id="prepay-summary" style="display:none;">
@@ -307,7 +317,7 @@
       </div>
 
       <div style="display:flex;justify-content:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
-        <button type="button" class="share-img-btn" onclick="shareAsImage('emi')" title="Generate and share/download high-res image breakdown">
+        <button type="button" class="share-img-btn" data-action="share-image" data-val="emi" title="Generate and share/download high-res image breakdown">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           Share Breakdown Image
         </button>
@@ -346,7 +356,7 @@
       </div>
       <div class="inp-wrap">
         <span class="inp-pfx">₹</span>
-        <input class="inp" type="number" id="user-salary-inp" value="125000" min="10000" step="5000" oninput="updateAffordability()">
+        <input class="inp" type="number" id="user-salary-inp" value="125000" min="10000" step="5000" aria-label="Monthly Take-Home Salary" data-calc="afford">
       </div>
       <div class="dti-gauge-track"><div class="dti-gauge-fill" id="dti-gauge-bar" style="width:35%"></div></div>
     </div>
@@ -359,7 +369,7 @@
       <div class="whatif-sub">See how small rate or tenure changes can save you Lakhs in interest</div>
     </div>
     <div class="whatif-grid" id="whatif-grid">
-      <!-- Injected dynamically by JS in ce() -->
+      <!-- Injected dynamically by JS in calculateEMI() -->
     </div>
   </div>
 
@@ -370,11 +380,11 @@
         <span>🏛️ Tax Benefit Estimator</span>
         <span style="font-size:0.7rem;font-weight:500;color:var(--text3)">(Year 1)</span>
       </div>
-      <div class="tax-slab-selector">
+      <div class="tax-slab-selector" role="radiogroup" aria-label="Tax Slabs">
         <span style="font-size:0.72rem;color:var(--text3);margin-right:2px;display:flex;align-items:center">Slab:</span>
-        <button type="button" class="tax-slab-chip" onclick="setTaxSlab(10,this)">10%</button>
-        <button type="button" class="tax-slab-chip" onclick="setTaxSlab(20,this)">20%</button>
-        <button type="button" class="tax-slab-chip active" onclick="setTaxSlab(30,this)">30%</button>
+        <button type="button" class="tax-slab-chip" data-action="set-tax-slab" data-val="10">10%</button>
+        <button type="button" class="tax-slab-chip" data-action="set-tax-slab" data-val="20">20%</button>
+        <button type="button" class="tax-slab-chip active" data-action="set-tax-slab" data-val="30">30%</button>
       </div>
     </div>
     <div class="tax-grid">
@@ -411,16 +421,16 @@
         </div>
       </div>
       <div class="chart-canvas-wrap">
-        <canvas id="amort-chart" width="800" height="230"></canvas>
+        <canvas id="amort-chart" width="800" height="230" aria-label="Amortization Schedule Chart" role="img"></canvas>
       </div>
     </div>
 
     <div class="amort-card">
       <div class="amort-head">
         <span class="amort-ttl">Repayment Schedule</span>
-        <div class="toggle-pill">
-          <button class="pill-btn active" onclick="setEmiMode('yr',this)">Yearly Breakdown</button>
-          <button class="pill-btn" onclick="setEmiMode('mo',this)">Monthly Details</button>
+        <div class="toggle-pill" role="tablist" aria-label="Repayment Schedule View">
+          <button class="pill-btn active" data-action="set-emi-mode" data-val="yr">Yearly Breakdown</button>
+          <button class="pill-btn" data-action="set-emi-mode" data-val="mo">Monthly Details</button>
         </div>
       </div>
       <div class="tbl-scroll">
@@ -442,15 +452,15 @@
 </main>
 
 <!-- ══════════════ TAB 2: SIP CALCULATOR ══════════════ -->
-<main class="calc-panel" id="tab-sip">
+<main class="calc-panel" id="tab-sip" role="tabpanel" aria-labelledby="tab-nav-sip">
   <div class="page-head">
     <div class="page-title"><span>SIP Growth Calculator</span></div>
     <div class="amort-actions">
-      <button class="btn-sm" onclick="openExportModal('sip')">
+      <button class="btn-sm" data-action="open-export-modal" data-val="sip" aria-label="Export SIP CSV">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export CSV
       </button>
-      <button class="btn-sm" onclick="triggerPrint('sip')">
+      <button class="btn-sm" data-action="trigger-print" data-val="sip" aria-label="Print SIP Report">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         Print / PDF
       </button>
@@ -461,92 +471,92 @@
     <div class="card">
       <div class="field">
         <div class="field-head">
-          <label class="field-lbl">Monthly Investment</label>
+          <label class="field-lbl" for="sa-i">Monthly Investment</label>
           <div class="quick-presets">
-            <span class="preset-chip" onclick="setSipMonthly(5000)">₹5K</span>
-            <span class="preset-chip" onclick="setSipMonthly(10000)">₹10K</span>
-            <span class="preset-chip" onclick="setSipMonthly(25000)">₹25K</span>
-            <span class="preset-chip" onclick="setSipMonthly(50000)">₹50K</span>
+            <button type="button" class="preset-chip" data-action="set-sip-monthly" data-val="5000" aria-label="Set Monthly Investment to 5K">₹5K</button>
+            <button type="button" class="preset-chip" data-action="set-sip-monthly" data-val="10000" aria-label="Set Monthly Investment to 10K">₹10K</button>
+            <button type="button" class="preset-chip" data-action="set-sip-monthly" data-val="25000" aria-label="Set Monthly Investment to 25K">₹25K</button>
+            <button type="button" class="preset-chip" data-action="set-sip-monthly" data-val="50000" aria-label="Set Monthly Investment to 50K">₹50K</button>
           </div>
         </div>
         <div class="inp-wrap">
           <span class="inp-pfx">₹</span>
-          <input class="inp" type="number" id="sa-i" value="10000" min="500" max="500000" oninput="s2i('sa-i','sa-s',500,5e5);cs()">
+          <input class="inp" type="number" id="sa-i" value="10000" min="500" max="500000" aria-label="Monthly Investment Amount" data-sync="sa-s" data-min="500" data-max="500000" data-calc="sip">
         </div>
         <div class="sl-wrap">
-          <input type="range" id="sa-s" min="500" max="500000" step="500" value="10000" oninput="i2s('sa-s','sa-i');cs()">
+          <input type="range" id="sa-s" aria-label="Monthly investment slider" min="500" max="500000" step="500" value="10000" data-sync-input="sa-i" data-calc="sip">
           <div class="sl-lbl"><span>₹500</span><span>₹5 Lakhs</span></div>
           <div class="sl-milestones">
-            <button type="button" class="sl-milestone-btn" onclick="setSipMonthly(2500)">2.5K</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipMonthly(5000)">5K</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipMonthly(10000)">10K</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipMonthly(25000)">25K</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipMonthly(50000)">50K</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-monthly" data-val="2500">2.5K</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-monthly" data-val="5000">5K</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-monthly" data-val="10000">10K</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-monthly" data-val="25000">25K</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-monthly" data-val="50000">50K</button>
           </div>
         </div>
       </div>
 
       <div class="field">
         <div class="field-head">
-          <label class="field-lbl">Expected Annual Return</label>
+          <label class="field-lbl" for="sr-i">Expected Annual Return</label>
           <div class="quick-presets">
-            <span class="preset-chip" onclick="setSipRate(10)">10%</span>
-            <span class="preset-chip" onclick="setSipRate(12)">12%</span>
-            <span class="preset-chip" onclick="setSipRate(15)">15%</span>
+            <button type="button" class="preset-chip" data-action="set-sip-rate" data-val="10" aria-label="Set Annual Return to 10%">10%</button>
+            <button type="button" class="preset-chip" data-action="set-sip-rate" data-val="12" aria-label="Set Annual Return to 12%">12%</button>
+            <button type="button" class="preset-chip" data-action="set-sip-rate" data-val="15" aria-label="Set Annual Return to 15%">15%</button>
           </div>
         </div>
         <div class="inp-wrap">
-          <input class="inp" type="number" id="sr-i" value="12" min="1" max="30" step="0.5" oninput="s2i('sr-i','sr-s',1,30);cs()">
+          <input class="inp" type="number" id="sr-i" value="12" min="1" max="30" step="0.5" aria-label="Expected Annual Return Input" data-sync="sr-s" data-min="1" data-max="30" data-calc="sip">
           <span class="inp-sfx">%</span>
         </div>
         <div class="sl-wrap">
-          <input type="range" id="sr-s" min="1" max="30" step="0.5" value="12" oninput="i2s('sr-s','sr-i');cs()">
+          <input type="range" id="sr-s" aria-label="Expected return slider" min="1" max="30" step="0.5" value="12" data-sync-input="sr-i" data-calc="sip">
           <div class="sl-lbl"><span>1%</span><span>30%</span></div>
           <div class="sl-milestones">
-            <button type="button" class="sl-milestone-btn" onclick="setSipRate(8.0)">8%</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipRate(12.0)">12%</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipRate(15.0)">15%</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipRate(18.0)">18%</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipRate(24.0)">24%</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-rate" data-val="8.0">8%</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-rate" data-val="12.0">12%</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-rate" data-val="15.0">15%</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-rate" data-val="18.0">18%</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-rate" data-val="24.0">24%</button>
           </div>
         </div>
       </div>
 
       <div class="field">
         <div class="field-head">
-          <label class="field-lbl">Investment Horizon</label>
+          <label class="field-lbl" for="st-i">Investment Horizon</label>
           <div class="quick-presets">
-            <span class="preset-chip" onclick="setSipTenure(5)">5Y</span>
-            <span class="preset-chip" onclick="setSipTenure(10)">10Y</span>
-            <span class="preset-chip" onclick="setSipTenure(15)">15Y</span>
-            <span class="preset-chip" onclick="setSipTenure(25)">25Y</span>
+            <button type="button" class="preset-chip" data-action="set-sip-tenure" data-val="5" aria-label="Set Horizon to 5 Years">5Y</button>
+            <button type="button" class="preset-chip" data-action="set-sip-tenure" data-val="10" aria-label="Set Horizon to 10 Years">10Y</button>
+            <button type="button" class="preset-chip" data-action="set-sip-tenure" data-val="15" aria-label="Set Horizon to 15 Years">15Y</button>
+            <button type="button" class="preset-chip" data-action="set-sip-tenure" data-val="25" aria-label="Set Horizon to 25 Years">25Y</button>
           </div>
         </div>
         <div class="inp-wrap">
-          <input class="inp" type="number" id="st-i" value="15" min="1" max="40" oninput="s2i('st-i','st-s',1,40);cs()">
+          <input class="inp" type="number" id="st-i" value="15" min="1" max="40" aria-label="Investment Horizon Years" data-sync="st-s" data-min="1" data-max="40" data-calc="sip">
           <span class="inp-sfx">Years</span>
         </div>
         <div class="sl-wrap">
-          <input type="range" id="st-s" min="1" max="40" step="1" value="15" oninput="i2s('st-s','st-i');cs()">
+          <input type="range" id="st-s" aria-label="Investment tenure slider" min="1" max="40" step="1" value="15" data-sync-input="st-i" data-calc="sip">
           <div class="sl-lbl"><span>1 Yr</span><span>40 Yrs</span></div>
           <div class="sl-milestones">
-            <button type="button" class="sl-milestone-btn" onclick="setSipTenure(5)">5Y</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipTenure(10)">10Y</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipTenure(15)">15Y</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipTenure(20)">20Y</button>
-            <button type="button" class="sl-milestone-btn" onclick="setSipTenure(30)">30Y</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-tenure" data-val="5">5Y</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-tenure" data-val="10">10Y</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-tenure" data-val="15">15Y</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-tenure" data-val="20">20Y</button>
+            <button type="button" class="sl-milestone-btn" data-action="set-sip-tenure" data-val="30">30Y</button>
           </div>
         </div>
       </div>
 
       <div class="field">
-        <label class="field-lbl">Annual Step-Up (Optional)</label>
+        <label class="field-lbl" for="ss-i">Annual Step-Up (Optional)</label>
         <div class="inp-wrap">
-          <input class="inp" type="number" id="ss-i" value="0" min="0" max="30" oninput="s2i('ss-i','ss-s',0,30);cs()">
+          <input class="inp" type="number" id="ss-i" value="0" min="0" max="30" aria-label="Annual Step-Up Rate" data-sync="ss-s" data-min="0" data-max="30" data-calc="sip">
           <span class="inp-sfx">%</span>
         </div>
         <div class="sl-wrap">
-          <input type="range" id="ss-s" min="0" max="30" step="1" value="0" oninput="i2s('ss-s','ss-i');cs()">
+          <input type="range" id="ss-s" aria-label="Annual step up percentage slider" min="0" max="30" step="1" value="0" data-sync-input="ss-i" data-calc="sip">
           <div class="sl-lbl"><span>0% (Fixed)</span><span>30% / yr</span></div>
         </div>
       </div>
@@ -589,7 +599,7 @@
       </div>
 
       <div style="display:flex;justify-content:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
-        <button type="button" class="share-img-btn" onclick="shareAsImage('sip')" title="Generate and share/download high-res image breakdown">
+        <button type="button" class="share-img-btn" data-action="share-image" data-val="sip" title="Generate and share/download high-res image breakdown">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           Share Breakdown Image
         </button>
@@ -611,7 +621,7 @@
         </div>
       </div>
       <div class="chart-canvas-wrap">
-        <canvas id="sip-chart" width="800" height="230"></canvas>
+        <canvas id="sip-chart" width="800" height="230" aria-label="SIP Wealth Visualizer Chart" role="img"></canvas>
       </div>
     </div>
 
@@ -628,15 +638,15 @@
 </main>
 
 <!-- ══════════════ TAB 3: LOAN COMPARISON ══════════════ -->
-<main class="calc-panel" id="tab-compare-loan">
+<main class="calc-panel" id="tab-compare-loan" role="tabpanel" aria-labelledby="tab-nav-loans">
   <div class="page-head">
     <div class="page-title"><span>Compare Home, Car &amp; Personal Loans</span></div>
     <div class="amort-actions">
-      <button class="btn-sm" onclick="openExportModal('compare-loan')">
+      <button class="btn-sm" data-action="open-export-modal" data-val="compare-loan" aria-label="Export Loan Comparison CSV">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export CSV
       </button>
-      <button class="btn-sm" onclick="triggerPrint('compare-loan')">
+      <button class="btn-sm" data-action="trigger-print" data-val="compare-loan" aria-label="Print Loan Comparison Report">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         Print / PDF
       </button>
@@ -647,26 +657,56 @@
     <div class="card">
       <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:16px">
         <div class="field" style="margin:0">
-          <label class="field-lbl">Loan Amount</label>
+          <label class="field-lbl" for="cl-p-i">Loan Amount</label>
           <div class="inp-wrap">
             <span class="inp-pfx">₹</span>
-            <input class="inp" type="number" id="cl-p-i" value="3000000" min="10000" max="100000000" oninput="s2i('cl-p-i','cl-p-s',100000,1e8);cmpLoan()">
+            <input class="inp" type="number" id="cl-p-i" value="3000000" min="100000" max="100000000" aria-label="Comparison Loan Amount" data-sync="cl-p-s" data-min="100000" data-max="100000000" data-calc="cmpLoan">
           </div>
           <div class="sl-wrap">
-            <input type="range" id="cl-p-s" min="100000" max="100000000" step="50000" value="3000000" oninput="i2s('cl-p-s','cl-p-i');cmpLoan()">
+            <input type="range" id="cl-p-s" aria-label="Comparison loan amount slider" min="100000" max="100000000" step="50000" value="3000000" data-sync-input="cl-p-i" data-calc="cmpLoan">
             <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Cr</span></div>
           </div>
         </div>
 
         <div class="field" style="margin:0">
-          <label class="field-lbl">Tenure (Years)</label>
+          <label class="field-lbl" for="cl-t-i">Tenure (Years)</label>
           <div class="inp-wrap">
-            <input class="inp" type="number" id="cl-t-i" value="20" min="1" max="30" oninput="s2i('cl-t-i','cl-t-s',1,30);cmpLoan()">
+            <input class="inp" type="number" id="cl-t-i" value="20" min="1" max="30" aria-label="Comparison Loan Tenure" data-sync="cl-t-s" data-min="1" data-max="30" data-calc="cmpLoan">
             <span class="inp-sfx">Years</span>
           </div>
           <div class="sl-wrap">
-            <input type="range" id="cl-t-s" min="1" max="30" step="1" value="20" oninput="i2s('cl-t-s','cl-t-i');cmpLoan()">
+            <input type="range" id="cl-t-s" aria-label="Comparison loan tenure slider" min="1" max="30" step="1" value="20" data-sync-input="cl-t-i" data-calc="cmpLoan">
             <div class="sl-lbl"><span>1 Yr</span><span>30 Yrs</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Editable Custom Rates for Loan Comparison (Issue #16) -->
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--glass-border)">
+        <div style="font-size:0.75rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">
+          Custom Comparison Interest Rates (% p.a.)
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:12px">
+          <div class="field" style="margin:0">
+            <label class="field-lbl" for="cl-r1-i">🏠 Home Loan</label>
+            <div class="inp-wrap">
+              <input class="inp" type="number" id="cl-r1-i" value="8.5" min="1" max="30" step="0.1" aria-label="Home Loan Rate for Comparison" data-calc="cmpLoan">
+              <span class="inp-sfx">%</span>
+            </div>
+          </div>
+          <div class="field" style="margin:0">
+            <label class="field-lbl" for="cl-r2-i">🚗 Car Loan</label>
+            <div class="inp-wrap">
+              <input class="inp" type="number" id="cl-r2-i" value="9.0" min="1" max="30" step="0.1" aria-label="Car Loan Rate for Comparison" data-calc="cmpLoan">
+              <span class="inp-sfx">%</span>
+            </div>
+          </div>
+          <div class="field" style="margin:0">
+            <label class="field-lbl" for="cl-r3-i">👤 Personal Loan</label>
+            <div class="inp-wrap">
+              <input class="inp" type="number" id="cl-r3-i" value="14.0" min="1" max="40" step="0.1" aria-label="Personal Loan Rate for Comparison" data-calc="cmpLoan">
+              <span class="inp-sfx">%</span>
+            </div>
           </div>
         </div>
       </div>
@@ -724,15 +764,15 @@
 </main>
 
 <!-- ══════════════ TAB 4: INVESTMENT SUITE (FD, RD, LUMPSUM, ALL) ══════════════ -->
-<main class="calc-panel" id="tab-investments">
+<main class="calc-panel" id="tab-investments" role="tabpanel" aria-labelledby="tab-nav-invest">
   <div class="page-head">
     <div class="page-title"><span>Investment Suite</span></div>
     <div class="amort-actions">
-      <button class="btn-sm" onclick="openExportModal('investments')">
+      <button class="btn-sm" data-action="open-export-modal" data-val="investments" aria-label="Export Investments CSV">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export CSV
       </button>
-      <button class="btn-sm" onclick="triggerPrint('investments')">
+      <button class="btn-sm" data-action="trigger-print" data-val="investments" aria-label="Print Investment Report">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         Print / PDF
       </button>
@@ -741,37 +781,37 @@
 
   <!-- Sub-navigation for investments -->
   <div style="max-width:1120px;margin:0 auto;padding:6px 16px 10px">
-    <div class="subnav-pills">
-      <button class="chip active" onclick="switchInvestSub('compare',this)">📊 Compare All</button>
-      <button class="chip" onclick="switchInvestSub('lumpsum',this)">💎 Lumpsum</button>
-      <button class="chip" onclick="switchInvestSub('fd',this)">🏦 Fixed Deposit (FD)</button>
-      <button class="chip" onclick="switchInvestSub('rd',this)">💰 Recurring Deposit (RD)</button>
+    <div class="subnav-pills" role="tablist" aria-label="Investment Suite Instruments">
+      <button class="chip active" role="tab" id="subtab-btn-compare" aria-selected="true" aria-controls="invest-sub-compare" data-action="switch-invest-sub" data-val="compare">📊 Compare All</button>
+      <button class="chip" role="tab" id="subtab-btn-lumpsum" aria-selected="false" aria-controls="invest-sub-lumpsum" data-action="switch-invest-sub" data-val="lumpsum">💎 Lumpsum</button>
+      <button class="chip" role="tab" id="subtab-btn-fd" aria-selected="false" aria-controls="invest-sub-fd" data-action="switch-invest-sub" data-val="fd">🏦 Fixed Deposit (FD)</button>
+      <button class="chip" role="tab" id="subtab-btn-rd" aria-selected="false" aria-controls="invest-sub-rd" data-action="switch-invest-sub" data-val="rd">💰 Recurring Deposit (RD)</button>
     </div>
   </div>
 
   <!-- SUB: COMPARE ALL -->
-  <div id="invest-sub-compare">
+  <div id="invest-sub-compare" role="tabpanel" aria-labelledby="subtab-btn-compare">
     <div style="max-width:1120px;margin:0 auto;padding:0 16px 14px">
       <div class="card" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:16px">
         <div class="field" style="margin:0">
-          <label class="field-lbl">Investment Corpus</label>
+          <label class="field-lbl" for="ca-i">Investment Corpus</label>
           <div class="inp-wrap">
             <span class="inp-pfx">₹</span>
-            <input class="inp" type="number" id="ca-i" value="100000" min="1000" max="10000000" oninput="s2i('ca-i','ca-s',1000,1e7);cmp()">
+            <input class="inp" type="number" id="ca-i" value="100000" min="1000" max="10000000" aria-label="Investment Corpus" data-sync="ca-s" data-min="1000" data-max="10000000" data-calc="cmp">
           </div>
           <div class="sl-wrap">
-            <input type="range" id="ca-s" min="1000" max="10000000" step="5000" value="100000" oninput="i2s('ca-s','ca-i');cmp()">
+            <input type="range" id="ca-s" aria-label="Investment corpus slider" min="1000" max="10000000" step="5000" value="100000" data-sync-input="ca-i" data-calc="cmp">
             <div class="sl-lbl"><span>₹1K</span><span>₹1 Crore</span></div>
           </div>
         </div>
         <div class="field" style="margin:0">
-          <label class="field-lbl">Time Period</label>
+          <label class="field-lbl" for="ct-i">Time Period</label>
           <div class="inp-wrap">
-            <input class="inp" type="number" id="ct-i" value="10" min="1" max="30" oninput="s2i('ct-i','ct-s',1,30);cmp()">
+            <input class="inp" type="number" id="ct-i" value="10" min="1" max="30" aria-label="Investment Time Period" data-sync="ct-s" data-min="1" data-max="30" data-calc="cmp">
             <span class="inp-sfx">Years</span>
           </div>
           <div class="sl-wrap">
-            <input type="range" id="ct-s" min="1" max="30" step="1" value="10" oninput="i2s('ct-s','ct-i');cmp()">
+            <input type="range" id="ct-s" aria-label="Investment time period slider" min="1" max="30" step="1" value="10" data-sync-input="ct-i" data-calc="cmp">
             <div class="sl-lbl"><span>1 Yr</span><span>30 Yrs</span></div>
           </div>
         </div>
@@ -792,28 +832,28 @@
   </div>
 
   <!-- SUB: LUMPSUM -->
-  <div id="invest-sub-lumpsum" style="display:none">
+  <div id="invest-sub-lumpsum" role="tabpanel" aria-labelledby="subtab-btn-lumpsum" style="display:none">
     <div class="page-body">
       <div class="card">
         <div class="field">
-          <label class="field-lbl">Total One-Time Investment</label>
-          <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="la-i" value="500000" min="1000" max="10000000" oninput="s2i('la-i','la-s',1000,1e7);cl()"></div>
-          <div class="sl-wrap"><input type="range" id="la-s" min="1000" max="10000000" step="5000" value="500000" oninput="i2s('la-s','la-i');cl()"><div class="sl-lbl"><span>₹1K</span><span>₹1Cr</span></div></div>
+          <label class="field-lbl" for="la-i">Total One-Time Investment</label>
+          <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="la-i" value="500000" min="1000" max="10000000" aria-label="Total One-Time Investment" data-sync="la-s" data-min="1000" data-max="10000000" data-calc="lumpsum"></div>
+          <div class="sl-wrap"><input type="range" id="la-s" aria-label="Lumpsum investment slider" min="1000" max="10000000" step="5000" value="500000" data-sync-input="la-i" data-calc="lumpsum"><div class="sl-lbl"><span>₹1K</span><span>₹1Cr</span></div></div>
         </div>
         <div class="field">
-          <label class="field-lbl">Expected Annual Return</label>
-          <div class="inp-wrap"><input class="inp" type="number" id="lr-i" value="12" min="1" max="30" step="0.5" oninput="s2i('lr-i','lr-s',1,30);cl()"><span class="inp-sfx">%</span></div>
-          <div class="sl-wrap"><input type="range" id="lr-s" min="1" max="30" step="0.5" value="12" oninput="i2s('lr-s','lr-i');cl()"><div class="sl-lbl"><span>1%</span><span>30%</span></div></div>
+          <label class="field-lbl" for="lr-i">Expected Annual Return</label>
+          <div class="inp-wrap"><input class="inp" type="number" id="lr-i" value="12" min="1" max="30" step="0.5" aria-label="Expected Annual Return" data-sync="lr-s" data-min="1" data-max="30" data-calc="lumpsum"><span class="inp-sfx">%</span></div>
+          <div class="sl-wrap"><input type="range" id="lr-s" aria-label="Expected annual return slider" min="1" max="30" step="0.5" value="12" data-sync-input="lr-i" data-calc="lumpsum"><div class="sl-lbl"><span>1%</span><span>30%</span></div></div>
         </div>
         <div class="field">
-          <label class="field-lbl">Tenure</label>
-          <div class="inp-wrap"><input class="inp" type="number" id="lt-i" value="10" min="1" max="40" oninput="s2i('lt-i','lt-s',1,40);cl()"><span class="inp-sfx">Years</span></div>
-          <div class="sl-wrap"><input type="range" id="lt-s" min="1" max="40" step="1" value="10" oninput="i2s('lt-s','lt-i');cl()"><div class="sl-lbl"><span>1 Yr</span><span>40 Yrs</span></div></div>
+          <label class="field-lbl" for="lt-i">Tenure</label>
+          <div class="inp-wrap"><input class="inp" type="number" id="lt-i" value="10" min="1" max="40" aria-label="Investment Tenure" data-sync="lt-s" data-min="1" data-max="40" data-calc="lumpsum"><span class="inp-sfx">Years</span></div>
+          <div class="sl-wrap"><input type="range" id="lt-s" aria-label="Investment tenure slider" min="1" max="40" step="1" value="10" data-sync-input="lt-i" data-calc="lumpsum"><div class="sl-lbl"><span>1 Yr</span><span>40 Yrs</span></div></div>
         </div>
         <div class="field">
-          <label class="field-lbl">Inflation Rate (for Purchasing Power)</label>
-          <div class="inp-wrap"><input class="inp" type="number" id="li-i" value="6" min="0" max="15" step="0.5" oninput="s2i('li-i','li-s',0,15);cl()"><span class="inp-sfx">%</span></div>
-          <div class="sl-wrap"><input type="range" id="li-s" min="0" max="15" step="0.5" value="6" oninput="i2s('li-s','li-i');cl()"><div class="sl-lbl"><span>0%</span><span>15%</span></div></div>
+          <label class="field-lbl" for="li-i">Inflation Rate (for Purchasing Power)</label>
+          <div class="inp-wrap"><input class="inp" type="number" id="li-i" value="6" min="0" max="15" step="0.5" aria-label="Inflation Rate" data-sync="li-s" data-min="0" data-max="15" data-calc="lumpsum"><span class="inp-sfx">%</span></div>
+          <div class="sl-wrap"><input type="range" id="li-s" aria-label="Inflation rate slider" min="0" max="15" step="0.5" value="6" data-sync-input="li-i" data-calc="lumpsum"><div class="sl-lbl"><span>0%</span><span>15%</span></div></div>
         </div>
       </div>
       <div class="card">
@@ -841,27 +881,27 @@
   </div>
 
   <!-- SUB: FD -->
-  <div id="invest-sub-fd" style="display:none">
+  <div id="invest-sub-fd" role="tabpanel" aria-labelledby="subtab-btn-fd" style="display:none">
     <div class="page-body">
       <div class="card">
-        <div class="field"><label class="field-lbl">Deposit Amount</label>
-          <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="fp-i" value="100000" min="1000" max="5000000" oninput="s2i('fp-i','fp-s',1000,5e6);cf()"></div>
-          <div class="sl-wrap"><input type="range" id="fp-s" min="1000" max="5000000" step="5000" value="100000" oninput="i2s('fp-s','fp-i');cf()"><div class="sl-lbl"><span>₹1K</span><span>₹50L</span></div></div>
+        <div class="field"><label class="field-lbl" for="fp-i">Deposit Amount</label>
+          <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="fp-i" value="100000" min="1000" max="5000000" aria-label="FD Deposit Amount" data-sync="fp-s" data-min="1000" data-max="5000000" data-calc="fd"></div>
+          <div class="sl-wrap"><input type="range" id="fp-s" aria-label="FD deposit amount slider" min="1000" max="5000000" step="5000" value="100000" data-sync-input="fp-i" data-calc="fd"><div class="sl-lbl"><span>₹1K</span><span>₹50L</span></div></div>
         </div>
-        <div class="field"><label class="field-lbl">Interest Rate (p.a)</label>
-          <div class="inp-wrap"><input class="inp" type="number" id="fr-i" value="7" min="1" max="15" step="0.1" oninput="s2i('fr-i','fr-s',1,15);cf()"><span class="inp-sfx">%</span></div>
-          <div class="sl-wrap"><input type="range" id="fr-s" min="1" max="15" step="0.1" value="7" oninput="i2s('fr-s','fr-i');cf()"><div class="sl-lbl"><span>1%</span><span>15%</span></div></div>
+        <div class="field"><label class="field-lbl" for="fr-i">Interest Rate (p.a)</label>
+          <div class="inp-wrap"><input class="inp" type="number" id="fr-i" value="7" min="1" max="15" step="0.1" aria-label="FD Interest Rate" data-sync="fr-s" data-min="1" data-max="15" data-calc="fd"><span class="inp-sfx">%</span></div>
+          <div class="sl-wrap"><input type="range" id="fr-s" aria-label="FD interest rate slider" min="1" max="15" step="0.1" value="7" data-sync-input="fr-i" data-calc="fd"><div class="sl-lbl"><span>1%</span><span>15%</span></div></div>
         </div>
-        <div class="field"><label class="field-lbl">Tenure (Years)</label>
-          <div class="inp-wrap"><input class="inp" type="number" id="ft-i" value="5" min="1" max="25" oninput="s2i('ft-i','ft-s',1,25);cf()"><span class="inp-sfx">Years</span></div>
-          <div class="sl-wrap"><input type="range" id="ft-s" min="1" max="25" step="1" value="5" oninput="i2s('ft-s','ft-i');cf()"><div class="sl-lbl"><span>1 Yr</span><span>25 Yrs</span></div></div>
+        <div class="field"><label class="field-lbl" for="ft-i">Tenure (Years)</label>
+          <div class="inp-wrap"><input class="inp" type="number" id="ft-i" value="5" min="1" max="25" aria-label="FD Tenure Years" data-sync="ft-s" data-min="1" data-max="25" data-calc="fd"><span class="inp-sfx">Years</span></div>
+          <div class="sl-wrap"><input type="range" id="ft-s" aria-label="FD tenure slider" min="1" max="25" step="1" value="5" data-sync-input="ft-i" data-calc="fd"><div class="sl-lbl"><span>1 Yr</span><span>25 Yrs</span></div></div>
         </div>
         <div class="field"><label class="field-lbl">Compounding Frequency</label>
-          <div class="chip-row" style="margin:6px 0 0">
-            <button class="chip" onclick="setFDC(1,this)">Annual</button>
-            <button class="chip" onclick="setFDC(2,this)">Half-Yearly</button>
-            <button class="chip active" onclick="setFDC(4,this)">Quarterly</button>
-            <button class="chip" onclick="setFDC(12,this)">Monthly</button>
+          <div class="chip-row" style="margin:6px 0 0" role="radiogroup" aria-label="FD Compounding Frequency">
+            <button type="button" class="chip" data-action="set-fdc" data-val="1">Annual</button>
+            <button type="button" class="chip" data-action="set-fdc" data-val="2">Half-Yearly</button>
+            <button type="button" class="chip active" data-action="set-fdc" data-val="4">Quarterly</button>
+            <button type="button" class="chip" data-action="set-fdc" data-val="12">Monthly</button>
           </div>
         </div>
       </div>
@@ -889,20 +929,20 @@
   </div>
 
   <!-- SUB: RD -->
-  <div id="invest-sub-rd" style="display:none">
+  <div id="invest-sub-rd" role="tabpanel" aria-labelledby="subtab-btn-rd" style="display:none">
     <div class="page-body">
       <div class="card">
-        <div class="field"><label class="field-lbl">Monthly Deposit</label>
-          <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="ra-i" value="5000" min="100" max="200000" oninput="s2i('ra-i','ra-s',100,2e5);cr()"></div>
-          <div class="sl-wrap"><input type="range" id="ra-s" min="100" max="200000" step="500" value="5000" oninput="i2s('ra-s','ra-i');cr()"><div class="sl-lbl"><span>₹100</span><span>₹2L</span></div></div>
+        <div class="field"><label class="field-lbl" for="ra-i">Monthly Deposit</label>
+          <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="ra-i" value="5000" min="100" max="200000" aria-label="RD Monthly Deposit" data-sync="ra-s" data-min="100" data-max="200000" data-calc="rd"></div>
+          <div class="sl-wrap"><input type="range" id="ra-s" aria-label="RD monthly deposit slider" min="100" max="200000" step="500" value="5000" data-sync-input="ra-i" data-calc="rd"><div class="sl-lbl"><span>₹100</span><span>₹2L</span></div></div>
         </div>
-        <div class="field"><label class="field-lbl">Interest Rate (p.a)</label>
-          <div class="inp-wrap"><input class="inp" type="number" id="rr-i" value="6.5" min="1" max="15" step="0.1" oninput="s2i('rr-i','rr-s',1,15);cr()"><span class="inp-sfx">%</span></div>
-          <div class="sl-wrap"><input type="range" id="rr-s" min="1" max="15" step="0.1" value="6.5" oninput="i2s('rr-s','rr-i');cr()"><div class="sl-lbl"><span>1%</span><span>15%</span></div></div>
+        <div class="field"><label class="field-lbl" for="rr-i">Interest Rate (p.a)</label>
+          <div class="inp-wrap"><input class="inp" type="number" id="rr-i" value="6.5" min="1" max="15" step="0.1" aria-label="RD Interest Rate" data-sync="rr-s" data-min="1" data-max="15" data-calc="rd"><span class="inp-sfx">%</span></div>
+          <div class="sl-wrap"><input type="range" id="rr-s" aria-label="RD interest rate slider" min="1" max="15" step="0.1" value="6.5" data-sync-input="rr-i" data-calc="rd"><div class="sl-lbl"><span>1%</span><span>15%</span></div></div>
         </div>
-        <div class="field"><label class="field-lbl">Tenure (Years)</label>
-          <div class="inp-wrap"><input class="inp" type="number" id="rt-i" value="3" min="1" max="15" oninput="s2i('rt-i','rt-s',1,15);cr()"><span class="inp-sfx">Years</span></div>
-          <div class="sl-wrap"><input type="range" id="rt-s" min="1" max="15" step="1" value="3" oninput="i2s('rt-s','rt-i');cr()"><div class="sl-lbl"><span>1 Yr</span><span>15 Yrs</span></div></div>
+        <div class="field"><label class="field-lbl" for="rt-i">Tenure (Years)</label>
+          <div class="inp-wrap"><input class="inp" type="number" id="rt-i" value="3" min="1" max="15" aria-label="RD Tenure Years" data-sync="rt-s" data-min="1" data-max="15" data-calc="rd"><span class="inp-sfx">Years</span></div>
+          <div class="sl-wrap"><input type="range" id="rt-s" aria-label="RD tenure slider" min="1" max="15" step="1" value="3" data-sync-input="rt-i" data-calc="rd"><div class="sl-lbl"><span>1 Yr</span><span>15 Yrs</span></div></div>
         </div>
       </div>
       <div class="card">
@@ -930,15 +970,15 @@
 </main>
 
 <!-- ══════════════ TAB 5: STOCK AVERAGE ══════════════ -->
-<main class="calc-panel" id="tab-avg">
+<main class="calc-panel" id="tab-avg" role="tabpanel" aria-labelledby="tab-nav-avg">
   <div class="page-head">
     <div class="page-title"><span>Stock &amp; Crypto Average Calculator</span></div>
     <div class="amort-actions">
-      <button class="btn-sm" onclick="openExportModal('avg')">
+      <button class="btn-sm" data-action="open-export-modal" data-val="avg" aria-label="Export Stock Average CSV">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export CSV
       </button>
-      <button class="btn-sm" onclick="triggerPrint('avg')">
+      <button class="btn-sm" data-action="trigger-print" data-val="avg" aria-label="Print Stock Average Report">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         Print / PDF
       </button>
@@ -948,10 +988,10 @@
   <div class="avg-body">
     <!-- LEFT: Buy Entries -->
     <div class="card">
-      <div class="chip-row">
-        <button class="chip active" onclick="setAvgType('stock',this)">📈 Stocks</button>
-        <button class="chip" onclick="setAvgType('mf',this)">💼 Mutual Funds</button>
-        <button class="chip" onclick="setAvgType('crypto',this)">🪙 Crypto</button>
+      <div class="chip-row" role="radiogroup" aria-label="Average Asset Class">
+        <button type="button" class="chip active" data-action="set-avg-type" data-val="stock">📈 Stocks</button>
+        <button type="button" class="chip" data-action="set-avg-type" data-val="mf">💼 Mutual Funds</button>
+        <button type="button" class="chip" data-action="set-avg-type" data-val="crypto">🪙 Crypto</button>
       </div>
 
       <div style="display:grid;grid-template-columns:auto 1fr 1fr auto;gap:10px;margin-bottom:8px;padding:0 2px">
@@ -963,14 +1003,14 @@
 
       <div id="avg-rows"></div>
 
-      <button class="add-btn" onclick="addAvgRow()">+ Add Another Buy Tranche</button>
+      <button class="add-btn" data-action="add-avg-row">+ Add Another Buy Tranche</button>
 
       <!-- CMP Input -->
       <div class="field" style="margin-top:20px;margin-bottom:0">
-        <label class="field-lbl">Current Market Price (CMP) - Optional</label>
+        <label class="field-lbl" for="avg-cmp">Current Market Price (CMP) - Optional</label>
         <div class="inp-wrap">
           <span class="inp-pfx">₹</span>
-          <input class="inp" type="number" id="avg-cmp" placeholder="Enter CMP for live P&L" oninput="calcAvg()">
+          <input class="inp" type="number" id="avg-cmp" placeholder="Enter CMP for live P&L" aria-label="Current Market Price" data-calc="avg">
         </div>
       </div>
     </div>
@@ -1009,7 +1049,7 @@
 </main>
 
 <!-- FLOATING EMI SUMMARY PILL -->
-<div id="floating-emi-pill" class="floating-pill" onclick="scrollToEmiResults()">
+<div id="floating-emi-pill" class="floating-pill" data-action="scroll-emi-results" role="button" tabindex="0" aria-label="Scroll to EMI calculation results">
   <div class="pill-glow-dot"></div>
   <div class="pill-info">
     <span class="pill-lbl">Monthly EMI</span>
@@ -1021,34 +1061,34 @@
 </div>
 
 <!-- ══════════════ IOS BOTTOM TAB BAR ══════════════ -->
-<nav class="bottom-tabbar" id="mobileTabbar">
-  <button class="tabbar-item active" data-tab="emi">
+<nav class="bottom-tabbar" id="mobileTabbar" role="tablist" aria-label="Mobile Navigation">
+  <button class="tabbar-item active" role="tab" id="mob-tab-emi" aria-selected="true" aria-controls="tab-emi" data-tab="emi">
     <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>EMI</span>
   </button>
-  <button class="tabbar-item" data-tab="sip">
+  <button class="tabbar-item" role="tab" id="mob-tab-sip" aria-selected="false" aria-controls="tab-sip" data-tab="sip">
     <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
     <span>SIP</span>
   </button>
-  <button class="tabbar-item" data-tab="compare-loan">
+  <button class="tabbar-item" role="tab" id="mob-tab-loans" aria-selected="false" aria-controls="tab-compare-loan" data-tab="compare-loan">
     <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
     <span>Loans</span>
   </button>
-  <button class="tabbar-item" data-tab="investments">
+  <button class="tabbar-item" role="tab" id="mob-tab-invest" aria-selected="false" aria-controls="tab-investments" data-tab="investments">
     <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
     <span>Invest</span>
   </button>
-  <button class="tabbar-item" data-tab="avg">
+  <button class="tabbar-item" role="tab" id="mob-tab-avg" aria-selected="false" aria-controls="tab-avg" data-tab="avg">
     <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     <span>Average</span>
   </button>
 </nav>
 
 <!-- ══════════════ IOS INSTALL GUIDE MODAL ══════════════ -->
-<div class="modal-overlay" id="installModal" onclick="closeInstallGuide(event)">
-  <div class="ios-sheet" onclick="event.stopPropagation()">
+<div class="modal-overlay" id="installModal" role="dialog" aria-modal="true" aria-labelledby="install-sheet-title">
+  <div class="ios-sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">Install EMI Calc on iOS</div>
+    <div class="sheet-title" id="install-sheet-title">Install EMI Calc on iOS</div>
     <div class="sheet-sub">Run this calculator as a native standalone app on your iPhone or iPad!</div>
 
     <div class="install-step">
@@ -1066,20 +1106,20 @@
       <div class="step-text">Tap <b>"Add"</b> in the top right corner. The app will appear on your Home Screen!</div>
     </div>
 
-    <button class="btn-primary" onclick="closeInstallGuide()">Got It!</button>
+    <button class="btn-primary" data-action="close-install-guide">Got It!</button>
   </div>
 </div>
 
 <!-- ══════════════ EXPORT & PRINT MODAL ══════════════ -->
-<div class="modal-overlay" id="exportModal" onclick="closeExportModal(event)">
-  <div class="ios-sheet export-sheet" onclick="event.stopPropagation()">
+<div class="modal-overlay" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+  <div class="ios-sheet export-sheet">
     <div class="sheet-handle"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div>
-        <div class="sheet-title" style="text-align:left;margin-bottom:2px">Export &amp; Report</div>
+        <div class="sheet-title" id="export-modal-title" style="text-align:left;margin-bottom:2px">Export &amp; Report</div>
         <div class="sheet-sub" id="export-modal-subtitle" style="text-align:left;margin-bottom:0">Download spreadsheet or generate clean PDF report</div>
       </div>
-      <button class="icon-btn" onclick="closeExportModal()" style="width:34px;height:34px;border-radius:50%" title="Close" aria-label="Close Export Modal">
+      <button class="icon-btn" data-action="close-export-modal" style="width:34px;height:34px;border-radius:50%" title="Close" aria-label="Close Export Modal">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
@@ -1094,8 +1134,8 @@
       <div style="display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:0.8rem;font-weight:700;color:var(--text)">Schedule Scope</span>
         <div class="toggle-pill" style="margin:0">
-          <button class="pill-btn active" id="export-pill-yr" onclick="setExportEmiMode('yr')">Yearly Breakdown</button>
-          <button class="pill-btn" id="export-pill-mo" onclick="setExportEmiMode('mo')">Monthly Details</button>
+          <button class="pill-btn active" id="export-pill-yr" data-action="set-export-emi-mode" data-val="yr">Yearly Breakdown</button>
+          <button class="pill-btn" id="export-pill-mo" data-action="set-export-emi-mode" data-val="mo">Monthly Details</button>
         </div>
       </div>
     </div>
@@ -1103,7 +1143,7 @@
     <!-- Export Options List -->
     <div class="export-options-list">
       <!-- 1. CSV Spreadsheet Option -->
-      <div class="export-opt-card" onclick="doExportCSV()">
+      <div class="export-opt-card" data-action="do-export-csv" role="button" tabindex="0">
         <div class="export-opt-icon csv-icon">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
         </div>
@@ -1111,11 +1151,11 @@
           <div class="export-opt-title">Download CSV (.csv)</div>
           <div class="export-opt-desc">Full schedule with metadata for Excel, Sheets &amp; Numbers</div>
         </div>
-        <button class="btn-opt-action">Download</button>
+        <button class="btn-opt-action" tabindex="-1">Download</button>
       </div>
 
       <!-- 2. Print / Save as PDF Option -->
-      <div class="export-opt-card" onclick="triggerPrint()">
+      <div class="export-opt-card" data-action="trigger-print" role="button" tabindex="0">
         <div class="export-opt-icon pdf-icon">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         </div>
@@ -1123,11 +1163,11 @@
           <div class="export-opt-title">Print / Save as PDF</div>
           <div class="export-opt-desc">Clean, ad-free printable financial report with tables</div>
         </div>
-        <button class="btn-opt-action">Print / PDF</button>
+        <button class="btn-opt-action" tabindex="-1">Print / PDF</button>
       </div>
 
       <!-- 3. Copy Table Data (TSV for Excel) -->
-      <div class="export-opt-card" onclick="copyTableToClipboard()">
+      <div class="export-opt-card" data-action="copy-table" role="button" tabindex="0">
         <div class="export-opt-icon copy-icon">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </div>
@@ -1135,11 +1175,11 @@
           <div class="export-opt-title">Copy Table Data</div>
           <div class="export-opt-desc">Instant clipboard copy — paste straight into Excel (Ctrl+V)</div>
         </div>
-        <button class="btn-opt-action">Copy Table</button>
+        <button class="btn-opt-action" tabindex="-1">Copy Table</button>
       </div>
 
       <!-- 4. Copy Summary Text -->
-      <div class="export-opt-card" onclick="copySummaryText()">
+      <div class="export-opt-card" data-action="copy-summary" role="button" tabindex="0">
         <div class="export-opt-icon share-icon">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
         </div>
@@ -1147,11 +1187,11 @@
           <div class="export-opt-title">Copy Text Summary</div>
           <div class="export-opt-desc">Share formatted calculation breakdown on WhatsApp/Email</div>
         </div>
-        <button class="btn-opt-action">Copy Text</button>
+        <button class="btn-opt-action" tabindex="-1">Copy Text</button>
       </div>
 
       <!-- 5. Share as HD Image Card -->
-      <div class="export-opt-card" onclick="shareAsImage('current')">
+      <div class="export-opt-card" data-action="share-image" data-val="current" role="button" tabindex="0">
         <div class="export-opt-icon" style="background:var(--green-lt);color:var(--green)">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </div>
@@ -1159,11 +1199,11 @@
           <div class="export-opt-title">Share HD Image Card (.png)</div>
           <div class="export-opt-desc">Save or share high-resolution financial card on WhatsApp/Socials</div>
         </div>
-        <button class="btn-opt-action">Save Image</button>
+        <button class="btn-opt-action" tabindex="-1">Save Image</button>
       </div>
     </div>
 
-    <button class="btn-primary" style="margin-top:16px;background:var(--card);color:var(--text);border:1.5px solid var(--border)" onclick="closeExportModal()">Done</button>
+    <button class="btn-primary" style="margin-top:16px;background:var(--card);color:var(--text);border:1.5px solid var(--border)" data-action="close-export-modal">Done</button>
   </div>
 </div>
 
