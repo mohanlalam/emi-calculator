@@ -154,6 +154,8 @@ function updateAllAmountInWords() {
   updateAmountInWords('ra-i', 'ra-words');
   updateAmountInWords('cl-p-i', 'cl-words');
   updateAmountInWords('bt-p-i', 'bt-words');
+  updateAmountInWords('tu-p-i', 'tu-p-words');
+  updateAmountInWords('tu-amt-i', 'tu-amt-words');
 }
 
 function setCurrency(code) {
@@ -166,6 +168,7 @@ function setCurrency(code) {
   calculateSIP();
   compareLoanProducts();
   calcBalanceTransfer();
+  calcTopUp();
   compareInvestments();
   calculateFD();
   calculateRD();
@@ -1853,14 +1856,20 @@ function switchLoansSub(type, el) {
 
   const compSec = document.getElementById('loans-sub-compare');
   const refSec = document.getElementById('loans-sub-refinance');
+  const topSec = document.getElementById('loans-sub-topup');
   if (compSec) compSec.style.display = type === 'compare' ? 'block' : 'none';
   if (refSec) refSec.style.display = type === 'refinance' ? 'block' : 'none';
+  if (topSec) topSec.style.display = type === 'topup' ? 'block' : 'none';
 
   if (type === 'compare') {
     compareLoanProducts();
   } else if (type === 'refinance') {
     calcBalanceTransfer();
     updateAmountInWords('bt-p-i', 'bt-words');
+  } else if (type === 'topup') {
+    calcTopUp();
+    updateAmountInWords('tu-p-i', 'tu-p-words');
+    updateAmountInWords('tu-amt-i', 'tu-amt-words');
   }
   triggerHaptic('light');
 }
@@ -2006,6 +2015,306 @@ function renderBalanceTransferTable(P, T, r1, r2, emi1, emi2) {
       <td class="tg">${fmt(pmt2)}</td>
       <td class="tg">+${fmt(annualSaved)}</td>
       <td class="tb">${fmt(cumSavings)}</td>
+    </tr>`;
+  }
+}
+
+// ─── LOAN TOP-UP & RESTRUCTURE SIMULATOR ───
+let tuElapsedUnit = 'yr';
+
+function setTuElapsedUnit(unit) {
+  tuElapsedUnit = unit;
+  const btnYr = document.getElementById('tu-elapsed-unit-yr');
+  const btnMo = document.getElementById('tu-elapsed-unit-mo');
+  if (btnYr) btnYr.classList.toggle('active', unit === 'yr');
+  if (btnMo) btnMo.classList.toggle('active', unit === 'mo');
+
+  const elapInp = document.getElementById('tu-elapsed-i');
+  const elapSl = document.getElementById('tu-elapsed-s');
+  const origTenure = Math.max(1, parseFloat(document.getElementById('tu-t-i')?.value) || 20);
+
+  if (unit === 'yr') {
+    if (elapInp && elapSl) {
+      let val = Math.max(1, Math.round((parseFloat(elapInp.value) || 36) / 12));
+      val = Math.min(val, Math.max(1, origTenure - 1));
+      elapInp.value = val;
+      elapInp.min = 1;
+      elapInp.max = Math.max(1, origTenure - 1);
+      elapSl.min = 1;
+      elapSl.max = Math.max(1, origTenure - 1);
+      elapSl.value = val;
+      updateSliderFill(elapSl);
+    }
+    const minLbl = document.getElementById('tu-elapsed-min-lbl');
+    const maxLbl = document.getElementById('tu-elapsed-max-lbl');
+    if (minLbl) minLbl.textContent = '1 Yr';
+    if (maxLbl) maxLbl.textContent = `${Math.max(1, origTenure - 1)} Yrs`;
+  } else {
+    if (elapInp && elapSl) {
+      let val = Math.max(1, Math.round((parseFloat(elapInp.value) || 3) * 12));
+      const maxMos = Math.max(1, (origTenure * 12) - 1);
+      val = Math.min(val, maxMos);
+      elapInp.value = val;
+      elapInp.min = 1;
+      elapInp.max = maxMos;
+      elapSl.min = 1;
+      elapSl.max = maxMos;
+      elapSl.value = val;
+      updateSliderFill(elapSl);
+    }
+    const minLbl = document.getElementById('tu-elapsed-min-lbl');
+    const maxLbl = document.getElementById('tu-elapsed-max-lbl');
+    if (minLbl) minLbl.textContent = '1 Mo';
+    if (maxLbl) maxLbl.textContent = `${Math.max(1, (origTenure * 12) - 1)} Mos`;
+  }
+  calcTopUp();
+  triggerHaptic('light');
+}
+
+function setTuOrigPrincipal(val) {
+  const pInput = document.getElementById('tu-p-i');
+  const pSlider = document.getElementById('tu-p-s');
+  if (pInput && pSlider) {
+    pInput.value = val;
+    pSlider.value = val;
+    updateSliderFill(pSlider);
+    updateAmountInWords('tu-p-i', 'tu-p-words');
+    calcTopUp();
+    triggerHaptic('medium');
+  }
+}
+
+function setTuAmt(val) {
+  const aInput = document.getElementById('tu-amt-i');
+  const aSlider = document.getElementById('tu-amt-s');
+  if (aInput && aSlider) {
+    aInput.value = val;
+    aSlider.value = val;
+    updateSliderFill(aSlider);
+    updateAmountInWords('tu-amt-i', 'tu-amt-words');
+    calcTopUp();
+    triggerHaptic('medium');
+  }
+}
+
+function calcTopUp() {
+  const pInp = document.getElementById('tu-p-i') || document.getElementById('tu-p-s');
+  const rInp = document.getElementById('tu-r-i') || document.getElementById('tu-r-s');
+  const tInp = document.getElementById('tu-t-i') || document.getElementById('tu-t-s');
+  const elapInp = document.getElementById('tu-elapsed-i') || document.getElementById('tu-elapsed-s');
+  const amtInp = document.getElementById('tu-amt-i') || document.getElementById('tu-amt-s');
+  const topRateInp = document.getElementById('tu-rate-i') || document.getElementById('tu-rate-s');
+  const newTenureInp = document.getElementById('tu-newtenure-i') || document.getElementById('tu-newtenure-s');
+
+  if (!pInp || !rInp || !tInp || !elapInp || !amtInp || !topRateInp) return;
+
+  const P0 = Math.min(Math.max(parseFloat(pInp.value) || 0, 10000), 100000000);
+  const r0 = Math.min(Math.max(parseFloat(rInp.value) || 0, 0.1), 30);
+  const T0 = Math.min(Math.max(parseFloat(tInp.value) || 0, 1), 35);
+  const rawElapsed = parseFloat(elapInp.value) || 1;
+  const elapsedMonths = tuElapsedUnit === 'yr' ? Math.round(rawElapsed * 12) : Math.round(rawElapsed);
+  const maxAllowedMonths = Math.max(1, (T0 * 12) - 1);
+  const actualElapsedMonths = Math.min(Math.max(1, elapsedMonths), maxAllowedMonths);
+
+  const topAmt = Math.min(Math.max(parseFloat(amtInp.value) || 0, 10000), 50000000);
+  const topRate = Math.min(Math.max(parseFloat(topRateInp.value) || 0, 0.1), 30);
+  const newTenureYrs = Math.min(Math.max(parseFloat(newTenureInp ? newTenureInp.value : (T0 - (actualElapsedMonths/12))) || 1, 1), 35);
+  const newTenureMonths = Math.round(newTenureYrs * 12);
+
+  // Update elapsed suffix text
+  const elapSfx = document.getElementById('tu-elapsed-sfx');
+  if (elapSfx) {
+    if (tuElapsedUnit === 'yr') {
+      elapSfx.textContent = `${rawElapsed} Yr${rawElapsed > 1 ? 's' : ''} (${actualElapsedMonths} mos)`;
+    } else {
+      const y = Math.floor(actualElapsedMonths / 12);
+      const m = actualElapsedMonths % 12;
+      elapSfx.textContent = `${actualElapsedMonths} Mos` + (y > 0 ? ` (${y}y ${m}m)` : '');
+    }
+  }
+
+  // 1. Original Loan Baseline
+  const n0 = T0 * 12;
+  const mr0 = r0 / 1200;
+  const origEMI = calcEMIval(P0, r0, n0);
+  const origTotalCost = origEMI * n0;
+  const origTotalInt = Math.max(0, origTotalCost - P0);
+
+  // 2. Amortize Phase 1 (Elapsed Months before Top-Up)
+  let bal = P0;
+  let cumInterestPaid = 0;
+  let cumPrincipalPaid = 0;
+  const phase1Yearly = [];
+  let curYrInt = 0, curYrPrin = 0, curYrPmt = 0;
+
+  for (let m = 1; m <= actualElapsedMonths; m++) {
+    const ip = bal * mr0;
+    const pp = Math.min(origEMI - ip, bal);
+    bal -= pp;
+    cumInterestPaid += ip;
+    cumPrincipalPaid += pp;
+    curYrInt += ip;
+    curYrPrin += pp;
+    curYrPmt += (ip + pp);
+
+    if (m % 12 === 0 || m === actualElapsedMonths) {
+      const yrNum = Math.ceil(m / 12);
+      phase1Yearly.push({
+        year: yrNum,
+        phase: 'Phase 1: Original Loan',
+        openBal: bal + curYrPrin,
+        payment: curYrPmt,
+        principal: curYrPrin,
+        interest: curYrInt,
+        closeBal: bal
+      });
+      curYrInt = 0; curYrPrin = 0; curYrPmt = 0;
+    }
+  }
+
+  const outstandingBal = Math.max(0, bal);
+  const mergedDebt = outstandingBal + topAmt;
+
+  // 3. Scenario A: Consolidated Loan
+  const mrTop = topRate / 1200;
+  const emiScenarioA = calcEMIval(mergedDebt, topRate, newTenureMonths);
+  const futureTotalCostA = emiScenarioA * newTenureMonths;
+  const futureInterestA = Math.max(0, futureTotalCostA - mergedDebt);
+  const wholeLifetimeInterestA = cumInterestPaid + futureInterestA;
+  const costOfTopUpA = Math.max(0, wholeLifetimeInterestA - origTotalInt);
+  const emiDiffA = emiScenarioA - origEMI;
+
+  // 4. Scenario B: Separate Tranches (Original continues + Separate Top-Up)
+  const remainingOrigMonths = Math.max(1, n0 - actualElapsedMonths);
+  const origFutureCost = origEMI * remainingOrigMonths;
+  const origFutureInt = Math.max(0, origFutureCost - outstandingBal);
+  const emiTopUpSeparate = calcEMIval(topAmt, topRate, remainingOrigMonths);
+  const topUpCostSeparate = emiTopUpSeparate * remainingOrigMonths;
+  const topUpIntSeparate = Math.max(0, topUpCostSeparate - topAmt);
+  const combinedEmiB = origEMI + emiTopUpSeparate;
+  const wholeLifetimeInterestB = cumInterestPaid + origFutureInt + topUpIntSeparate;
+  const costOfTopUpB = Math.max(0, wholeLifetimeInterestB - origTotalInt);
+
+  // 5. Scenario C: Keep Same EMI (Tenure Extension)
+  let extMonths = 0;
+  let wholeLifetimeInterestC = 0;
+  let canKeepSameEMI = origEMI > (mergedDebt * mrTop);
+  if (canKeepSameEMI) {
+    extMonths = Math.ceil(-Math.log(1 - (mergedDebt * mrTop / origEMI)) / Math.log(1 + mrTop));
+    const futureCostC = origEMI * extMonths;
+    const futureIntC = Math.max(0, futureCostC - mergedDebt);
+    wholeLifetimeInterestC = cumInterestPaid + futureIntC;
+  }
+
+  // Animate Headline & Stat Badges
+  animateNumber('tu-hero-lifetime-int', wholeLifetimeInterestA);
+  const heroSub = document.getElementById('tu-hero-sub');
+  if (heroSub) {
+    heroSub.textContent = `Past Interest (${fmtC(cumInterestPaid)}) + Future Interest (${fmtC(futureInterestA)})`;
+  }
+  animateNumber('tu-new-emi', emiScenarioA);
+  animateNumber('tu-orig-emi', origEMI);
+  animateNumber('tu-paid-int', cumInterestPaid);
+  animateNumber('tu-bal-before', outstandingBal);
+  animateNumber('tu-total-debt', mergedDebt);
+  animateNumber('tu-extra-int', costOfTopUpA);
+
+  const emiDiffEl = document.getElementById('tu-emi-diff');
+  if (emiDiffEl) {
+    if (emiDiffA >= 0) {
+      emiDiffEl.className = 'bt-stat-val tr';
+      emiDiffEl.textContent = `+${fmt(emiDiffA)}/mo`;
+    } else {
+      emiDiffEl.className = 'bt-stat-val tg';
+      emiDiffEl.textContent = `-${fmt(Math.abs(emiDiffA))}/mo`;
+    }
+  }
+
+  // Update Scenario Cards
+  const scenAEmi = document.getElementById('tu-scen-a-emi');
+  const scenADetail = document.getElementById('tu-scen-a-detail');
+  if (scenAEmi) scenAEmi.innerHTML = `${fmt(emiScenarioA)}<span style="font-size:.7rem">/mo</span>`;
+  if (scenADetail) scenADetail.textContent = `Single merged loan for ${newTenureYrs} yrs. Whole lifetime interest: ${fmtC(wholeLifetimeInterestA)}.`;
+
+  const scenBEmi = document.getElementById('tu-scen-b-emi');
+  const scenBDetail = document.getElementById('tu-scen-b-detail');
+  if (scenBEmi) scenBEmi.innerHTML = `${fmt(combinedEmiB)}<span style="font-size:.7rem">/mo</span>`;
+  if (scenBDetail) scenBDetail.textContent = `Original EMI (${fmt(origEMI)}) + Top-Up (${fmt(emiTopUpSeparate)}). Whole interest: ${fmtC(wholeLifetimeInterestB)}.`;
+
+  const scenCEmi = document.getElementById('tu-scen-c-emi');
+  const scenCDetail = document.getElementById('tu-scen-c-detail');
+  if (scenCEmi) scenCEmi.innerHTML = `${fmt(origEMI)}<span style="font-size:.7rem">/mo</span>`;
+  if (scenCDetail) {
+    if (canKeepSameEMI) {
+      const extYrs = Math.floor(extMonths / 12);
+      const extMos = extMonths % 12;
+      const extraTenureMos = Math.max(0, extMonths - remainingOrigMonths);
+      const extraY = Math.floor(extraTenureMos / 12);
+      const extraM = extraTenureMos % 12;
+      scenCDetail.textContent = `Tenure extends to ${extYrs}y ${extMos}m (+${extraY}y ${extraM}m). Whole interest jumps to ${fmtC(wholeLifetimeInterestC)}.`;
+    } else {
+      scenCDetail.textContent = `EMI too low to cover monthly interest on ${fmtC(mergedDebt)}. EMI increase is required.`;
+    }
+  }
+
+  // Render Schedule Table
+  renderTopUpTable(phase1Yearly, mergedDebt, newTenureMonths, topRate, emiScenarioA, topAmt, actualElapsedMonths);
+  updateAmountInWords('tu-p-i', 'tu-p-words');
+  updateAmountInWords('tu-amt-i', 'tu-amt-words');
+}
+
+function renderTopUpTable(phase1Data, mergedPrincipal, remainingMonths, topRate, newEMI, topAmt, elapsedMonths) {
+  const tbody = document.getElementById('tu-schedule-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  // Render Phase 1 rows
+  phase1Data.forEach(row => {
+    tbody.innerHTML += `<tr>
+      <td>Year ${row.year}</td>
+      <td><span class="status-pill-orig">Original Loan</span></td>
+      <td class="tr">${fmt(row.openBal)}</td>
+      <td class="tb">${fmt(row.payment)}</td>
+      <td class="tg">${fmt(row.principal)}</td>
+      <td class="tr">${fmt(row.interest)}</td>
+      <td class="tb">${fmt(row.closeBal)}</td>
+    </tr>`;
+  });
+
+  // Render Phase 2 rows
+  let bal = mergedPrincipal;
+  const mr = topRate / 1200;
+  const elapsedYrs = Math.ceil(elapsedMonths / 12);
+  const remainingYrs = Math.ceil(remainingMonths / 12);
+
+  for (let y = 1; y <= remainingYrs; y++) {
+    const yrNum = elapsedYrs + y;
+    let yPrin = 0, yInt = 0, yPmt = 0;
+    const isTopUpYear = (y === 1);
+    const startBal = bal;
+
+    for (let m = 0; m < 12; m++) {
+      if (bal <= 0.01) break;
+      const ip = bal * mr;
+      const pp = Math.min(newEMI - ip, bal);
+      bal -= pp;
+      yInt += ip;
+      yPrin += pp;
+      yPmt += (ip + pp);
+    }
+
+    const phaseTag = isTopUpYear 
+      ? `<span class="status-pill-topup">Top-Up (+${fmtC(topAmt)})</span>` 
+      : `<span class="status-pill-topup">Restructured</span>`;
+
+    tbody.innerHTML += `<tr>
+      <td>Year ${yrNum}</td>
+      <td>${phaseTag}</td>
+      <td class="tr">${fmt(startBal)}</td>
+      <td class="tb">${fmt(yPmt)}</td>
+      <td class="tg">${fmt(yPrin)}</td>
+      <td class="tr">${fmt(yInt)}</td>
+      <td class="tb">${fmt(Math.max(0, bal))}</td>
     </tr>`;
   }
 }
@@ -3349,6 +3658,15 @@ function handleAction(action, val, target, el, e) {
     case 'set-bt-fee-type':
       setBtFeeType(val, el);
       break;
+    case 'set-tu-orig-principal':
+      setTuOrigPrincipal(parseFloat(val));
+      break;
+    case 'set-tu-amt':
+      setTuAmt(parseFloat(val));
+      break;
+    case 'set-tu-elapsed-unit':
+      setTuElapsedUnit(val);
+      break;
   }
 }
 
@@ -3389,6 +3707,10 @@ function runCalculatorByName(name) {
     case 'refinance':
     case 'bt':
       calcBalanceTransfer();
+      break;
+    case 'topup':
+    case 'tu':
+      calcTopUp();
       break;
   }
 }
@@ -3538,6 +3860,10 @@ window.calculateLumpsum = calculateLumpsum;
 window.compareInvestments = compareInvestments;
 window.compareLoans = compareLoanProducts;
 window.calcBalanceTransfer = calcBalanceTransfer;
+window.calcTopUp = calcTopUp;
+window.setTuElapsedUnit = setTuElapsedUnit;
+window.setTuOrigPrincipal = setTuOrigPrincipal;
+window.setTuAmt = setTuAmt;
 window.switchLoansSub = switchLoansSub;
 window.setCurrency = setCurrency;
 window.toggleCurrencyMenu = toggleCurrencyMenu;
@@ -3566,6 +3892,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCurrencyUI();
   updateAllAmountInWords();
   calcBalanceTransfer();
+  calcTopUp();
 });
 
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
@@ -3573,6 +3900,7 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
   updateCurrencyUI();
   updateAllAmountInWords();
   calcBalanceTransfer();
+  calcTopUp();
 }
 
 window.addEventListener('load', () => {
@@ -3582,6 +3910,7 @@ window.addEventListener('load', () => {
     updateCurrencyUI();
     updateAllAmountInWords();
     calcBalanceTransfer();
+    calcTopUp();
     if (window._lastYearlyAmortData) drawAmortizationChart(window._lastYearlyAmortData);
     if (window._lastSipChartData) drawSipChart(window._lastSipChartData);
   }, 200);

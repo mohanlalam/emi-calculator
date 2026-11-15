@@ -683,6 +683,7 @@
     <div class="subnav-pills" role="tablist" aria-label="Loan Tools">
       <button class="chip active" role="tab" id="loans-subtab-btn-compare" aria-selected="true" aria-controls="loans-sub-compare" data-action="switch-loans-sub" data-val="compare">🏦 Compare Loans</button>
       <button class="chip" role="tab" id="loans-subtab-btn-refinance" aria-selected="false" aria-controls="loans-sub-refinance" data-action="switch-loans-sub" data-val="refinance">🔄 Balance Transfer &amp; Refinance</button>
+      <button class="chip" role="tab" id="loans-subtab-btn-topup" aria-selected="false" aria-controls="loans-sub-topup" data-action="switch-loans-sub" data-val="topup">📈 Loan Top-Up &amp; Restructure</button>
     </div>
   </div>
 
@@ -943,6 +944,231 @@
               </tr>
             </thead>
             <tbody id="bt-schedule-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUB: LOAN TOP-UP & RESTRUCTURE -->
+  <div id="loans-sub-topup" style="display:none">
+    <div class="page-body">
+      <!-- Left: Top-Up Inputs Card -->
+      <div class="card">
+        <div class="section-title-sm" style="font-weight:800;font-size:0.95rem;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px">
+          <span>1️⃣</span> Original Active Loan
+        </div>
+
+        <!-- Original Loan Amount -->
+        <div class="field">
+          <div class="field-head">
+            <label class="field-lbl" for="tu-p-i">Original Loan Amount</label>
+            <div class="quick-presets">
+              <button type="button" class="preset-chip" data-action="set-tu-orig-principal" data-val="2500000">₹25L</button>
+              <button type="button" class="preset-chip" data-action="set-tu-orig-principal" data-val="5000000">₹50L</button>
+              <button type="button" class="preset-chip" data-action="set-tu-orig-principal" data-val="7500000">₹75L</button>
+              <button type="button" class="preset-chip" data-action="set-tu-orig-principal" data-val="10000000">₹1Cr</button>
+            </div>
+          </div>
+          <div class="inp-wrap">
+            <span class="inp-pfx curr-pfx">₹</span>
+            <input class="inp" type="number" id="tu-p-i" value="5000000" min="50000" max="100000000" aria-label="Original Loan Amount" data-sync="tu-p-s" data-min="50000" data-max="100000000" data-calc="topup">
+          </div>
+          <div class="amt-words-badge" id="tu-p-words" aria-live="polite"></div>
+          <div class="sl-wrap">
+            <input type="range" id="tu-p-s" aria-label="Original loan amount slider" min="100000" max="100000000" step="50000" value="5000000" data-sync-input="tu-p-i" data-calc="topup">
+            <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Crore</span></div>
+          </div>
+        </div>
+
+        <!-- Original Interest Rate & Original Tenure -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field">
+            <label class="field-lbl" for="tu-r-i">Original Rate</label>
+            <div class="inp-wrap">
+              <input class="inp" type="number" id="tu-r-i" value="8.5" min="1" max="30" step="0.1" aria-label="Original Interest Rate" data-sync="tu-r-s" data-min="1" data-max="30" data-calc="topup">
+              <span class="inp-sfx">%</span>
+            </div>
+            <div class="sl-wrap">
+              <input type="range" id="tu-r-s" aria-label="Original rate slider" min="1" max="30" step="0.1" value="8.5" data-sync-input="tu-r-i" data-calc="topup">
+              <div class="sl-lbl"><span>1%</span><span>30%</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-lbl" for="tu-t-i">Original Tenure</label>
+            <div class="inp-wrap">
+              <input class="inp" type="number" id="tu-t-i" value="20" min="1" max="35" aria-label="Original Tenure in Years" data-sync="tu-t-s" data-min="1" data-max="35" data-calc="topup">
+              <span class="inp-sfx">Yrs</span>
+            </div>
+            <div class="sl-wrap">
+              <input type="range" id="tu-t-s" aria-label="Original tenure slider" min="1" max="35" step="1" value="20" data-sync-input="tu-t-i" data-calc="topup">
+              <div class="sl-lbl"><span>1 Yr</span><span>35 Yrs</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title-sm" style="font-weight:800;font-size:0.95rem;color:var(--text);margin-top:14px;margin-bottom:12px;display:flex;align-items:center;gap:6px">
+          <span>2️⃣</span> Top-Up Timing &amp; Amount
+        </div>
+
+        <!-- Tenure Elapsed before Top-Up -->
+        <div class="field">
+          <div class="field-head">
+            <label class="field-lbl" for="tu-elapsed-i">Loan Elapsed (When Top-Up Occurs)</label>
+            <div class="fee-type-toggle">
+              <button type="button" class="fee-type-btn active" id="tu-elapsed-unit-yr" data-action="set-tu-elapsed-unit" data-val="yr">Years</button>
+              <button type="button" class="fee-type-btn" id="tu-elapsed-unit-mo" data-action="set-tu-elapsed-unit" data-val="mo">Months</button>
+            </div>
+          </div>
+          <div class="inp-wrap">
+            <input class="inp" type="number" id="tu-elapsed-i" value="3" min="1" max="34" aria-label="Time Elapsed" data-sync="tu-elapsed-s" data-min="1" data-max="34" data-calc="topup">
+            <span class="inp-sfx" id="tu-elapsed-sfx">3 Years (36 mos)</span>
+          </div>
+          <div class="sl-wrap">
+            <input type="range" id="tu-elapsed-s" aria-label="Elapsed time slider" min="1" max="19" step="1" value="3" data-sync-input="tu-elapsed-i" data-calc="topup">
+            <div class="sl-lbl"><span id="tu-elapsed-min-lbl">1 Yr</span><span id="tu-elapsed-max-lbl">19 Yrs</span></div>
+          </div>
+        </div>
+
+        <!-- Top-Up Amount Required -->
+        <div class="field">
+          <div class="field-head">
+            <label class="field-lbl" for="tu-amt-i">Top-Up Amount Needed</label>
+            <div class="quick-presets">
+              <button type="button" class="preset-chip" data-action="set-tu-amt" data-val="500000">₹5L</button>
+              <button type="button" class="preset-chip" data-action="set-tu-amt" data-val="1000000">₹10L</button>
+              <button type="button" class="preset-chip" data-action="set-tu-amt" data-val="1500000">₹15L</button>
+              <button type="button" class="preset-chip" data-action="set-tu-amt" data-val="2500000">₹25L</button>
+            </div>
+          </div>
+          <div class="inp-wrap">
+            <span class="inp-pfx curr-pfx">₹</span>
+            <input class="inp" type="number" id="tu-amt-i" value="1000000" min="20000" max="50000000" aria-label="Top-Up Amount" data-sync="tu-amt-s" data-min="20000" data-max="50000000" data-calc="topup">
+          </div>
+          <div class="amt-words-badge" id="tu-amt-words" aria-live="polite"></div>
+          <div class="sl-wrap">
+            <input type="range" id="tu-amt-s" aria-label="Top-Up amount slider" min="50000" max="20000000" step="50000" value="1000000" data-sync-input="tu-amt-i" data-calc="topup">
+            <div class="sl-lbl"><span>₹50K</span><span>₹2 Crore</span></div>
+          </div>
+        </div>
+
+        <!-- Top-Up Interest Rate & Top-Up Tenure Mode -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field">
+            <label class="field-lbl" for="tu-rate-i">Top-Up Rate</label>
+            <div class="inp-wrap">
+              <input class="inp" type="number" id="tu-rate-i" value="8.75" min="1" max="30" step="0.1" aria-label="Top-Up Interest Rate" data-sync="tu-rate-s" data-min="1" data-max="30" data-calc="topup">
+              <span class="inp-sfx">%</span>
+            </div>
+            <div class="sl-wrap">
+              <input type="range" id="tu-rate-s" aria-label="Top-Up rate slider" min="1" max="30" step="0.1" value="8.75" data-sync-input="tu-rate-i" data-calc="topup">
+              <div class="sl-lbl"><span>1%</span><span>30%</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-lbl" for="tu-newtenure-i">New / Combined Tenure</label>
+            <div class="inp-wrap">
+              <input class="inp" type="number" id="tu-newtenure-i" value="17" min="1" max="35" aria-label="New Tenure in Years" data-sync="tu-newtenure-s" data-min="1" data-max="35" data-calc="topup">
+              <span class="inp-sfx">Yrs</span>
+            </div>
+            <div class="sl-wrap">
+              <input type="range" id="tu-newtenure-s" aria-label="New tenure slider" min="1" max="35" step="1" value="17" data-sync-input="tu-newtenure-i" data-calc="topup">
+              <div class="sl-lbl"><span>1 Yr</span><span>35 Yrs</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Top-Up Results & Scenarios Card -->
+      <div class="card">
+        <div class="bt-hero-card" style="background:linear-gradient(135deg,rgba(0,180,255,0.12),rgba(0,229,160,0.08));border-color:rgba(0,180,255,0.3)">
+          <div class="bt-hero-lbl">Whole Lifetime Interest Payable</div>
+          <div class="bt-hero-amt" id="tu-hero-lifetime-int" style="color:var(--blue)">₹62,45,210</div>
+          <div class="bt-hero-sub" id="tu-hero-sub">Past Interest Paid + Future Interest with Top-Up</div>
+        </div>
+
+        <div class="res-row res-main">
+          <span class="res-key" style="font-weight:700;color:var(--text);font-size:.92rem">Consolidated Monthly EMI</span>
+          <span class="res-val big cb" id="tu-new-emi">₹54,180/mo</span>
+        </div>
+
+        <div class="bt-stat-grid">
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">Original Loan EMI</div>
+            <div class="bt-stat-val" id="tu-orig-emi">₹43,391</div>
+          </div>
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">Monthly EMI Change</div>
+            <div class="bt-stat-val tr" id="tu-emi-diff">+₹10,789</div>
+          </div>
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">Interest Paid So Far</div>
+            <div class="bt-stat-val" id="tu-paid-int">₹12,24,150</div>
+          </div>
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">Balance Before Top-Up</div>
+            <div class="bt-stat-val" id="tu-bal-before">₹46,62,070</div>
+          </div>
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">New Total Loan Debt</div>
+            <div class="bt-stat-val tg" id="tu-total-debt">₹56,62,070</div>
+          </div>
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">Cost of Top-Up (Extra Int)</div>
+            <div class="bt-stat-val tr" id="tu-extra-int">+₹8,31,450</div>
+          </div>
+        </div>
+
+        <!-- Scenarios Comparison Cards -->
+        <div class="tu-scenarios-container" style="margin-top:14px">
+          <div style="font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">
+            💡 Scenario Comparison Analysis
+          </div>
+          <div class="tu-scenarios-grid">
+            <!-- Scenario A: Consolidated Loan -->
+            <div class="tu-scenario-card active" id="tu-scen-a">
+              <div class="tu-scen-tag">Scenario A: Consolidated Loan</div>
+              <div class="tu-scen-emi" id="tu-scen-a-emi">₹54,180<span style="font-size:.7rem">/mo</span></div>
+              <div class="tu-scen-detail" id="tu-scen-a-detail">Single merged loan for 17 years. Whole interest: ₹62.45L.</div>
+            </div>
+            <!-- Scenario B: Separate Parallel Top-Up Loan -->
+            <div class="tu-scenario-card" id="tu-scen-b">
+              <div class="tu-scen-tag">Scenario B: Separate Tranches</div>
+              <div class="tu-scen-emi" id="tu-scen-b-emi">₹52,990<span style="font-size:.7rem">/mo</span></div>
+              <div class="tu-scen-detail" id="tu-scen-b-detail">Keep original EMI (₹43.4K) + parallel top-up (₹9.6K). Whole interest: ₹61.80L.</div>
+            </div>
+            <!-- Scenario C: Keep Same EMI (Tenure Extension) -->
+            <div class="tu-scenario-card" id="tu-scen-c">
+              <div class="tu-scen-tag">Scenario C: Keep Same EMI</div>
+              <div class="tu-scen-emi" id="tu-scen-c-emi">₹43,391<span style="font-size:.7rem">/mo</span></div>
+              <div class="tu-scen-detail" id="tu-scen-c-detail">Extend tenure to keep EMI unchanged.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top-Up Lifecycle Amortization Schedule Table -->
+    <div class="amort-sec">
+      <div class="amort-card">
+        <div class="amort-head">
+          <span class="amort-ttl">Lifecycle Loan &amp; Top-Up Schedule</span>
+          <span style="font-size:0.75rem;color:var(--text3)">Phase 1 (Original Loan) &amp; Phase 2 (After Top-Up Restructure)</span>
+        </div>
+        <div class="tbl-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Phase / Status</th>
+                <th>Opening Balance</th>
+                <th>EMI Outflow</th>
+                <th>Principal Repaid</th>
+                <th>Interest Paid</th>
+                <th>Closing Balance</th>
+              </tr>
+            </thead>
+            <tbody id="tu-schedule-tbody"></tbody>
           </table>
         </div>
       </div>

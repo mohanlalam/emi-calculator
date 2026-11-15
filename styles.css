@@ -1657,3 +1657,65 @@ button:focus-visible, input:focus-visible {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ─── Loan Top-Up & Scenario Comparison Styling ─── */
+.tu-scenarios-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 640px) {
+  .tu-scenarios-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+.tu-scenario-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tu-scenario-card:hover, .tu-scenario-card.active {
+  background: rgba(0, 229, 160, 0.08);
+  border-color: var(--green);
+}
+.tu-scen-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+.tu-scen-emi {
+  font-size: 1.22rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 4px;
+  font-family: 'Outfit', sans-serif;
+}
+.tu-scen-detail {
+  font-size: 0.74rem;
+  color: var(--text2);
+  line-height: 1.35;
+}
+.status-pill-orig {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(0, 180, 255, 0.12);
+  color: var(--blue);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.status-pill-topup {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(0, 229, 160, 0.15);
+  color: var(--green);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
