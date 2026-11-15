@@ -1,6 +1,215 @@
-// Formatters
-const fmt = n => '₹' + (n > 0 && n < 1 ? n.toFixed(2) : Math.round(n).toLocaleString('en-IN'));
-const fmtC = n => n >= 1e7 ? '₹' + (n/1e7).toFixed(2) + ' Cr' : n >= 1e5 ? '₹' + (n/1e5).toFixed(2) + ' L' : fmt(n);
+// ─── CURRENCY DEFINITIONS & MULTI-CURRENCY FORMATTER ───
+const CURRENCIES = {
+  INR: { code: 'INR', symbol: '₹', locale: 'en-IN', name: 'Indian Rupee', system: 'lakhs' },
+  USD: { code: 'USD', symbol: '$', locale: 'en-US', name: 'US Dollar', system: 'millions' },
+  EUR: { code: 'EUR', symbol: '€', locale: 'de-DE', name: 'Euro', system: 'millions' },
+  GBP: { code: 'GBP', symbol: '£', locale: 'en-GB', name: 'British Pound', system: 'millions' },
+  AED: { code: 'AED', symbol: 'AED', locale: 'en-AE', name: 'UAE Dirham', system: 'millions' }
+};
+
+let currentCurrency = CURRENCIES[localStorage.getItem('emi_currency')] || CURRENCIES.INR;
+
+function fmt(n) {
+  if (isNaN(n) || n === null || n === undefined) return currentCurrency.symbol + '0';
+  const prefix = currentCurrency.symbol === 'AED' ? 'AED ' : currentCurrency.symbol;
+  if (n > 0 && n < 1) return prefix + n.toFixed(2);
+  return prefix + Math.round(n).toLocaleString(currentCurrency.locale);
+}
+
+function fmtC(n) {
+  if (isNaN(n) || n === null || n === undefined) return currentCurrency.symbol + '0';
+  const sym = currentCurrency.symbol === 'AED' ? 'AED ' : currentCurrency.symbol;
+  if (currentCurrency.system === 'lakhs') {
+    if (n >= 1e7) return sym + (n/1e7).toFixed(2) + ' Cr';
+    if (n >= 1e5) return sym + (n/1e5).toFixed(2) + ' L';
+    if (n >= 1000) return sym + (n/1000).toFixed(1) + ' K';
+    return fmt(n);
+  } else {
+    if (n >= 1e9) return sym + (n/1e9).toFixed(2) + ' B';
+    if (n >= 1e6) return sym + (n/1e6).toFixed(2) + ' M';
+    if (n >= 1e3) return sym + (n/1e3).toFixed(1) + ' K';
+    return fmt(n);
+  }
+}
+
+// ─── NUMBER TO WORDS CONVERTER (Indian & International) ───
+const ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+  'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+function convertBelowThousand(n) {
+  let s = '';
+  if (n >= 100) {
+    s += ONES[Math.floor(n / 100)] + ' Hundred ';
+    n %= 100;
+  }
+  if (n >= 20) {
+    s += TENS[Math.floor(n / 10)] + (n % 10 ? ' ' + ONES[n % 10] : '');
+  } else if (n > 0) {
+    s += ONES[n];
+  }
+  return s.trim();
+}
+
+function convertNumberToIndianWords(n) {
+  if (n === 0) return 'Zero';
+  let cr = Math.floor(n / 1e7);
+  n %= 1e7;
+  let lk = Math.floor(n / 1e5);
+  n %= 1e5;
+  let th = Math.floor(n / 1000);
+  n %= 1000;
+  let rem = n;
+
+  let parts = [];
+  if (cr > 0) parts.push(convertNumberToIndianWords(cr) + ' Crore' + (cr > 1 ? 's' : ''));
+  if (lk > 0) parts.push(convertBelowThousand(lk) + ' Lakh' + (lk > 1 ? 's' : ''));
+  if (th > 0) parts.push(convertBelowThousand(th) + ' Thousand');
+  if (rem > 0) parts.push(convertBelowThousand(rem));
+
+  return parts.join(' ').trim();
+}
+
+function convertNumberToInternationalWords(n) {
+  if (n === 0) return 'Zero';
+  let b = Math.floor(n / 1e9);
+  n %= 1e9;
+  let m = Math.floor(n / 1e6);
+  n %= 1e6;
+  let th = Math.floor(n / 1000);
+  n %= 1000;
+  let rem = n;
+
+  let parts = [];
+  if (b > 0) parts.push(convertBelowThousand(b) + ' Billion');
+  if (m > 0) parts.push(convertBelowThousand(m) + ' Million');
+  if (th > 0) parts.push(convertBelowThousand(th) + ' Thousand');
+  if (rem > 0) parts.push(convertBelowThousand(rem));
+
+  return parts.join(' ').trim();
+}
+
+function formatAmountInWords(num, curr = currentCurrency) {
+  num = Math.round(parseFloat(num) || 0);
+  if (!num || num <= 0) return '';
+  const sym = curr.symbol === 'AED' ? 'AED ' : curr.symbol;
+
+  if (curr.system === 'lakhs') {
+    let shortTxt = '';
+    const words = convertNumberToIndianWords(num);
+    if (num >= 1e7) {
+      const cr = (num / 1e7).toFixed(2).replace(/\.00$/, '');
+      shortTxt = `${sym}${cr} Crore${num >= 2e7 ? 's' : ''}`;
+    } else if (num >= 1e5) {
+      const lk = (num / 1e5).toFixed(2).replace(/\.00$/, '');
+      shortTxt = `${sym}${lk} Lakh${num >= 2e5 ? 's' : ''}`;
+    } else if (num >= 1000) {
+      const th = (num / 1000).toFixed(1).replace(/\.0$/, '');
+      shortTxt = `${sym}${th}K`;
+    } else {
+      shortTxt = `${sym}${num}`;
+    }
+    return `${shortTxt} • ${words} Rupees`;
+  } else {
+    let shortTxt = '';
+    const words = convertNumberToInternationalWords(num);
+    const currName = curr.code === 'USD' ? 'Dollars' : curr.code === 'EUR' ? 'Euros' : curr.code === 'GBP' ? 'Pounds' : 'Dirhams';
+    if (num >= 1e9) {
+      const b = (num / 1e9).toFixed(2).replace(/\.00$/, '');
+      shortTxt = `${sym}${b} Billion`;
+    } else if (num >= 1e6) {
+      const m = (num / 1e6).toFixed(2).replace(/\.00$/, '');
+      shortTxt = `${sym}${m} Million`;
+    } else if (num >= 1000) {
+      const k = (num / 1000).toFixed(1).replace(/\.0$/, '');
+      shortTxt = `${sym}${k}K`;
+    } else {
+      shortTxt = `${sym}${num}`;
+    }
+    return `${shortTxt} • ${words} ${currName}`;
+  }
+}
+
+function updateAmountInWords(inputId, badgeId) {
+  const inp = document.getElementById(inputId);
+  const badge = document.getElementById(badgeId);
+  if (!inp || !badge) return;
+  const val = parseFloat(inp.value) || 0;
+  if (val > 0) {
+    badge.textContent = formatAmountInWords(val);
+    badge.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function updateAllAmountInWords() {
+  updateAmountInWords('ep-i', 'ep-words');
+  updateAmountInWords('prepay-monthly', 'prepay-mo-words');
+  updateAmountInWords('prepay-yearly', 'prepay-yr-words');
+  updateAmountInWords('sa-i', 'sa-words');
+  updateAmountInWords('ca-i', 'ca-words');
+  updateAmountInWords('la-i', 'la-words');
+  updateAmountInWords('fp-i', 'fp-words');
+  updateAmountInWords('ra-i', 'ra-words');
+  updateAmountInWords('cl-p-i', 'cl-words');
+  updateAmountInWords('bt-p-i', 'bt-words');
+}
+
+function setCurrency(code) {
+  if (!CURRENCIES[code]) return;
+  currentCurrency = CURRENCIES[code];
+  localStorage.setItem('emi_currency', code);
+  updateCurrencyUI();
+
+  calculateEMI();
+  calculateSIP();
+  compareLoanProducts();
+  calcBalanceTransfer();
+  compareInvestments();
+  calculateFD();
+  calculateRD();
+  calculateLumpsum();
+  calcAvg();
+  updateAllAmountInWords();
+  initAllSliders();
+
+  const menu = document.getElementById('currency-menu');
+  if (menu) menu.classList.remove('show');
+  const btn = document.getElementById('currency-toggle-btn');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+
+  triggerHaptic('medium');
+  showToast(`Currency set to ${currentCurrency.code} (${currentCurrency.symbol})`);
+}
+
+function toggleCurrencyMenu() {
+  const menu = document.getElementById('currency-menu');
+  const btn = document.getElementById('currency-toggle-btn');
+  if (!menu) return;
+  const isShown = menu.classList.toggle('show');
+  if (btn) btn.setAttribute('aria-expanded', isShown ? 'true' : 'false');
+  triggerHaptic('light');
+}
+
+function updateCurrencyUI() {
+  const topSym = document.getElementById('topbar-curr-sym');
+  if (topSym) topSym.textContent = currentCurrency.symbol;
+
+  document.querySelectorAll('.curr-opt').forEach(opt => {
+    opt.classList.toggle('active', opt.dataset.val === currentCurrency.code);
+  });
+
+  document.querySelectorAll('.curr-pfx, .inp-pfx').forEach(pfx => {
+    if (pfx.id === 'bt-fee-pfx') {
+      const activeFeeBtn = document.querySelector('.fee-type-btn.active');
+      pfx.style.display = (activeFeeBtn && activeFeeBtn.dataset.btFeeType === 'flat') ? 'flex' : 'none';
+      pfx.textContent = currentCurrency.symbol;
+      return;
+    }
+    pfx.textContent = currentCurrency.symbol;
+  });
+}
 
 // ── Slider fill & tooltip engine ──────────────────────────────
 function updateSliderFill(sl) {
@@ -47,17 +256,8 @@ function updateSliderFill(sl) {
 function formatSliderVal(sl, val) {
   const wrap = sl.closest('.field, div');
   const pfx = wrap && wrap.querySelector('.inp-pfx');
-  if (pfx && pfx.textContent.includes('₹')) {
-    if (val >= 1e7) {
-      const cr = val / 1e7;
-      return '₹' + (cr % 1 === 0 ? cr.toFixed(0) : cr.toFixed(2)) + ' Cr';
-    }
-    if (val >= 1e5) {
-      const lk = val / 1e5;
-      return '₹' + (lk % 1 === 0 ? lk.toFixed(0) : lk.toFixed(1)) + ' L';
-    }
-    if (val >= 1000) return '₹' + (val / 1000).toFixed(0) + 'K';
-    return '₹' + Math.round(val).toLocaleString('en-IN');
+  if (pfx && pfx.style.display !== 'none') {
+    return fmtC(val);
   }
   // % sliders
   const sfx = wrap && wrap.querySelector('.inp-sfx');
@@ -1640,6 +1840,176 @@ function compareLoanProducts() {
 }
 const cmpLoan = compareLoanProducts;
 
+// ─── LOANS SUB-NAV & BALANCE TRANSFER CALCULATOR ───
+let currentLoansSub = 'compare';
+
+function switchLoansSub(type, el) {
+  currentLoansSub = type;
+  document.querySelectorAll('#tab-compare-loan .subnav-pills .chip').forEach(c => {
+    const isAct = c.dataset.val === type;
+    c.classList.toggle('active', isAct);
+    c.setAttribute('aria-selected', isAct ? 'true' : 'false');
+  });
+
+  const compSec = document.getElementById('loans-sub-compare');
+  const refSec = document.getElementById('loans-sub-refinance');
+  if (compSec) compSec.style.display = type === 'compare' ? 'block' : 'none';
+  if (refSec) refSec.style.display = type === 'refinance' ? 'block' : 'none';
+
+  if (type === 'compare') {
+    compareLoanProducts();
+  } else if (type === 'refinance') {
+    calcBalanceTransfer();
+    updateAmountInWords('bt-p-i', 'bt-words');
+  }
+  triggerHaptic('light');
+}
+
+function setBtPrincipal(val) {
+  const pInput = document.getElementById('bt-p-i');
+  const pSlider = document.getElementById('bt-p-s');
+  if (pInput && pSlider) {
+    pInput.value = val;
+    pSlider.value = val;
+    updateSliderFill(pSlider);
+    updateAmountInWords('bt-p-i', 'bt-words');
+    calcBalanceTransfer();
+    triggerHaptic('medium');
+  }
+}
+
+function setBtFeeType(type, el) {
+  document.querySelectorAll('.fee-type-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.btFeeType === type);
+  });
+  const pfx = document.getElementById('bt-fee-pfx');
+  const sfx = document.getElementById('bt-fee-sfx');
+  const feeInp = document.getElementById('bt-fee-i');
+
+  if (type === 'pct') {
+    if (pfx) pfx.style.display = 'none';
+    if (sfx) sfx.style.display = 'flex';
+    if (feeInp && feeInp.value > 10) feeInp.value = 0.5;
+  } else {
+    if (pfx) {
+      pfx.style.display = 'flex';
+      pfx.textContent = currentCurrency.symbol;
+    }
+    if (sfx) sfx.style.display = 'none';
+    if (feeInp && feeInp.value <= 5) feeInp.value = 15000;
+  }
+  calcBalanceTransfer();
+  triggerHaptic('light');
+}
+
+function calcBalanceTransfer() {
+  const pInput = document.getElementById('bt-p-s') || document.getElementById('bt-p-i');
+  const tInput = document.getElementById('bt-t-s') || document.getElementById('bt-t-i');
+  const r1Input = document.getElementById('bt-r1-s') || document.getElementById('bt-r1-i');
+  const r2Input = document.getElementById('bt-r2-s') || document.getElementById('bt-r2-i');
+  const feeInput = document.getElementById('bt-fee-i');
+
+  if (!pInput || !tInput || !r1Input || !r2Input) return;
+
+  const P = Math.min(Math.max(parseFloat(pInput.value) || 0, 100000), 100000000);
+  const T = Math.min(Math.max(parseFloat(tInput.value) || 0, 1), 30);
+  const r1 = Math.min(Math.max(parseFloat(r1Input.value) || 0, 0.1), 30);
+  const r2 = Math.min(Math.max(parseFloat(r2Input.value) || 0, 0.1), 30);
+  const feeVal = parseFloat(feeInput ? feeInput.value : 0.5) || 0;
+  const activeFeeBtn = document.querySelector('.fee-type-btn.active');
+  const feeType = activeFeeBtn ? activeFeeBtn.dataset.btFeeType : 'pct';
+
+  const n = T * 12;
+  const currentEMI = calcEMIval(P, r1, n);
+  const newEMI = calcEMIval(P, r2, n);
+  const currentTotal = currentEMI * n;
+  const newTotal = newEMI * n;
+  const currentInterest = Math.max(0, currentTotal - P);
+  const newInterest = Math.max(0, newTotal - P);
+  const grossInterestSaved = Math.max(0, currentInterest - newInterest);
+  const monthlySavings = Math.max(0, currentEMI - newEMI);
+
+  const processingFee = feeType === 'pct' ? (P * (feeVal / 100)) : feeVal;
+  const netSavings = grossInterestSaved - processingFee;
+  const breakevenMonths = monthlySavings > 0 ? Math.ceil(processingFee / monthlySavings) : 0;
+
+  animateNumber('bt-net-savings', netSavings);
+  animateNumber('bt-monthly-savings', monthlySavings);
+  animateNumber('bt-emi-current', currentEMI);
+  animateNumber('bt-emi-new', newEMI);
+  animateNumber('bt-interest-saved', grossInterestSaved);
+  animateNumber('bt-fee-amt', processingFee);
+  animateNumber('bt-current-int', currentInterest);
+
+  const breakevenEl = document.getElementById('bt-breakeven');
+  if (breakevenEl) {
+    if (netSavings > 0 && breakevenMonths > 0) {
+      const yrs = Math.floor(breakevenMonths / 12);
+      const mos = breakevenMonths % 12;
+      let timeStr = yrs > 0 ? `${yrs}y ${mos}m` : `${mos} mos`;
+      breakevenEl.textContent = `${breakevenMonths} Mos (${timeStr})`;
+    } else {
+      breakevenEl.textContent = 'Immediate';
+    }
+  }
+
+  const verdictEl = document.getElementById('bt-verdict');
+  if (verdictEl) {
+    if (netSavings > 25000) {
+      verdictEl.className = 'bt-verdict-badge good';
+      verdictEl.innerHTML = `<span>✅ Highly Recommended: Switching to ${r2.toFixed(1)}% saves you <b>${fmtC(netSavings)}</b> net after all transfer fees!</span>`;
+    } else if (netSavings > 0) {
+      verdictEl.className = 'bt-verdict-badge moderate';
+      verdictEl.innerHTML = `<span>⚖️ Moderate Savings: You save <b>${fmt(netSavings)}</b> net. Consider negotiating with your existing lender first.</span>`;
+    } else {
+      verdictEl.className = 'bt-verdict-badge bad';
+      verdictEl.innerHTML = `<span>⚠️ Not Recommended: Transfer fees (${fmt(processingFee)}) outweigh total interest savings (${fmt(grossInterestSaved)}).</span>`;
+    }
+  }
+
+  // Render Table
+  renderBalanceTransferTable(P, T, r1, r2, currentEMI, newEMI);
+  updateAmountInWords('bt-p-i', 'bt-words');
+}
+
+function renderBalanceTransferTable(P, T, r1, r2, emi1, emi2) {
+  const tbody = document.getElementById('bt-schedule-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  let bal1 = P, bal2 = P;
+  const mr1 = r1 / 100 / 12;
+  const mr2 = r2 / 100 / 12;
+  let cumSavings = 0;
+
+  for (let y = 1; y <= T; y++) {
+    let pmt1 = 0, pmt2 = 0;
+    for (let m = 0; m < 12; m++) {
+      if (bal1 > 0.01) {
+        const ip1 = bal1 * mr1;
+        const pp1 = Math.min(emi1 - ip1, bal1);
+        pmt1 += (pp1 + ip1);
+        bal1 -= pp1;
+      }
+      if (bal2 > 0.01) {
+        const ip2 = bal2 * mr2;
+        const pp2 = Math.min(emi2 - ip2, bal2);
+        pmt2 += (pp2 + ip2);
+        bal2 -= pp2;
+      }
+    }
+    const annualSaved = Math.max(0, pmt1 - pmt2);
+    cumSavings += annualSaved;
+    tbody.innerHTML += `<tr>
+      <td>Year ${y}</td>
+      <td class="tr">${fmt(pmt1)}</td>
+      <td class="tg">${fmt(pmt2)}</td>
+      <td class="tg">+${fmt(annualSaved)}</td>
+      <td class="tb">${fmt(cumSavings)}</td>
+    </tr>`;
+  }
+}
+
 // ─── STOCK AVERAGE CALCULATOR ───
 let avgType = 'stock';
 let avgRowCount = 0;
@@ -2964,6 +3334,21 @@ function handleAction(action, val, target, el, e) {
     case 'toggle-year':
       toggleYearAmortization(parseInt(val, 10));
       break;
+    case 'toggle-currency-menu':
+      toggleCurrencyMenu();
+      break;
+    case 'set-currency':
+      setCurrency(val);
+      break;
+    case 'switch-loans-sub':
+      switchLoansSub(val, el);
+      break;
+    case 'set-bt-principal':
+      setBtPrincipal(parseFloat(val));
+      break;
+    case 'set-bt-fee-type':
+      setBtFeeType(val, el);
+      break;
   }
 }
 
@@ -3001,7 +3386,74 @@ function runCalculatorByName(name) {
     case 'afford':
       updateAffordability();
       break;
+    case 'refinance':
+    case 'bt':
+      calcBalanceTransfer();
+      break;
   }
+}
+
+// ─── PULL TO REFRESH (iOS PWA Standalone & Mobile Gesture) ───
+function initPullToRefresh() {
+  const ptr = document.getElementById('ptr-indicator');
+  if (!ptr) return;
+  let startY = 0;
+  let currentY = 0;
+  let isPulling = false;
+  const THRESHOLD = 75;
+
+  window.addEventListener('touchstart', (e) => {
+    if (window.scrollY <= 3) {
+      startY = e.touches[0].pageY;
+      isPulling = true;
+    } else {
+      isPulling = false;
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!isPulling) return;
+    currentY = e.touches[0].pageY;
+    const diff = currentY - startY;
+    if (diff > 10 && window.scrollY <= 3) {
+      const pullDist = Math.min(diff * 0.45, THRESHOLD + 25);
+      ptr.style.transform = `translateY(${pullDist}px)`;
+      ptr.style.opacity = Math.min(pullDist / THRESHOLD, 1);
+      if (pullDist >= THRESHOLD) {
+        ptr.classList.add('ptr-ready');
+        ptr.textContent = '↑ Release to refresh';
+      } else {
+        ptr.classList.remove('ptr-ready');
+        ptr.textContent = '↓ Pull down to refresh';
+      }
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchend', () => {
+    if (!isPulling) return;
+    isPulling = false;
+    const diff = currentY - startY;
+    const pullDist = Math.min(diff * 0.45, THRESHOLD + 25);
+    if (pullDist >= THRESHOLD) {
+      ptr.textContent = '↻ Checking for updates...';
+      ptr.style.transform = `translateY(55px)`;
+      triggerHaptic('medium');
+      setTimeout(() => {
+        forceCheckUpdate();
+        setTimeout(() => {
+          ptr.style.transform = '';
+          ptr.style.opacity = '';
+          ptr.classList.remove('ptr-ready');
+        }, 1200);
+      }, 300);
+    } else {
+      ptr.style.transform = '';
+      ptr.style.opacity = '';
+      ptr.classList.remove('ptr-ready');
+    }
+    startY = 0;
+    currentY = 0;
+  });
 }
 
 function initAppEventListeners() {
@@ -3021,6 +3473,14 @@ function initAppEventListeners() {
       if (e.target.id === 'exportModal' || e.target.id === 'export-modal') closeExportModal();
       if (e.target.id === 'installModal' || e.target.id === 'installGuideModal') closeInstallGuide();
     }
+
+    // Close currency menu when clicking outside
+    const currMenu = document.getElementById('currency-menu');
+    if (currMenu && !e.target.closest('#currency-toggle-btn') && !e.target.closest('#currency-menu')) {
+      currMenu.classList.remove('show');
+      const toggleBtn = document.getElementById('currency-toggle-btn');
+      if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+    }
   });
 
   // Global input & change delegation for paired sliders and number inputs
@@ -3033,6 +3493,7 @@ function initAppEventListeners() {
       const mx = el.dataset.max ? parseFloat(el.dataset.max) : undefined;
       syncSliderToInput(el.id, sId, mn, mx);
       if (el.dataset.calc) runCalculatorByName(el.dataset.calc);
+      updateAllAmountInWords();
       return;
     }
     // Slider syncing to input
@@ -3040,13 +3501,16 @@ function initAppEventListeners() {
       const iId = el.dataset.syncInput;
       syncInputToSlider(el.id, iId);
       if (el.dataset.calc) runCalculatorByName(el.dataset.calc);
+      updateAllAmountInWords();
       return;
     }
     // Direct calculation triggering on input
     if (el.dataset.calc) {
       runCalculatorByName(el.dataset.calc);
+      updateAllAmountInWords();
       return;
     }
+    updateAllAmountInWords();
   });
 
   // Clamp input values on blur/change
@@ -3058,8 +3522,11 @@ function initAppEventListeners() {
       clampInputValue(el.id, mn, mx);
       syncSliderToInput(el.id, el.dataset.sync, mn, mx);
       if (el.dataset.calc) runCalculatorByName(el.dataset.calc);
+      updateAllAmountInWords();
     }
   });
+
+  initPullToRefresh();
 }
 
 // ─── SELF-DOCUMENTING FUNCTION ALIASES ───
@@ -3070,6 +3537,10 @@ window.calculateRD = calculateRD;
 window.calculateLumpsum = calculateLumpsum;
 window.compareInvestments = compareInvestments;
 window.compareLoans = compareLoanProducts;
+window.calcBalanceTransfer = calcBalanceTransfer;
+window.switchLoansSub = switchLoansSub;
+window.setCurrency = setCurrency;
+window.toggleCurrencyMenu = toggleCurrencyMenu;
 window.syncSliderToInput = syncSliderToInput;
 window.syncInputToSlider = syncInputToSlider;
 window.toggleYearAmortization = toggleYearAmortization;
@@ -3090,15 +3561,27 @@ window.i2s = syncInputToSlider;
 window.fmtC = fmtC;
 
 // Attach listeners, tooltips and initial chart redraw on DOM ready
-document.addEventListener('DOMContentLoaded', initAppEventListeners);
+document.addEventListener('DOMContentLoaded', () => {
+  initAppEventListeners();
+  updateCurrencyUI();
+  updateAllAmountInWords();
+  calcBalanceTransfer();
+});
+
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
   initAppEventListeners();
+  updateCurrencyUI();
+  updateAllAmountInWords();
+  calcBalanceTransfer();
 }
 
 window.addEventListener('load', () => {
   setTimeout(() => {
     initDonutTooltips();
     updateTaxBenefits();
+    updateCurrencyUI();
+    updateAllAmountInWords();
+    calcBalanceTransfer();
     if (window._lastYearlyAmortData) drawAmortizationChart(window._lastYearlyAmortData);
     if (window._lastSipChartData) drawSipChart(window._lastSipChartData);
   }, 200);

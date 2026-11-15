@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' blob:; img-src 'self' data: blob:; connect-src 'self';">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMI Calc">
 <meta name="application-name" content="EMI Calc">
 <meta name="theme-color" content="#060e1e" id="theme-color-meta">
@@ -25,6 +25,7 @@
 <!-- PWA and iOS Icons (Relative paths for GitHub Pages) -->
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="./icon-512.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
 
@@ -36,6 +37,12 @@
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+
+<!-- PULL TO REFRESH INDICATOR (iOS PWA) -->
+<div id="ptr-indicator" class="ptr-indicator" aria-hidden="true">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  <span class="ptr-text">Pull to refresh</span>
+</div>
 
 <!-- PRINT-ONLY REPORT HEADER -->
 <div id="print-header" class="print-only" style="padding:16px 16px 8px;margin-bottom:12px;border-bottom:2px solid var(--green)">
@@ -71,6 +78,20 @@
     </div>
 
     <div class="header-actions">
+      <!-- Currency Switcher Dropdown -->
+      <div class="currency-dropdown" id="currency-dropdown">
+        <button type="button" class="icon-btn currency-toggle-btn" id="currency-toggle-btn" data-action="toggle-currency-menu" title="Select Currency" aria-label="Select Currency" aria-expanded="false">
+          <span class="curr-badge-sym" id="topbar-curr-sym">₹</span>
+        </button>
+        <div class="currency-menu" id="currency-menu" role="menu" aria-label="Select Currency">
+          <button type="button" class="curr-opt active" data-action="set-currency" data-val="INR" role="menuitem"><span class="curr-opt-sym">₹</span><span class="curr-opt-name">INR</span><span class="curr-opt-sub">Lakhs / Cr</span></button>
+          <button type="button" class="curr-opt" data-action="set-currency" data-val="USD" role="menuitem"><span class="curr-opt-sym">$</span><span class="curr-opt-name">USD</span><span class="curr-opt-sub">Millions</span></button>
+          <button type="button" class="curr-opt" data-action="set-currency" data-val="EUR" role="menuitem"><span class="curr-opt-sym">€</span><span class="curr-opt-name">EUR</span><span class="curr-opt-sub">Millions</span></button>
+          <button type="button" class="curr-opt" data-action="set-currency" data-val="GBP" role="menuitem"><span class="curr-opt-sym">£</span><span class="curr-opt-name">GBP</span><span class="curr-opt-sub">Millions</span></button>
+          <button type="button" class="curr-opt" data-action="set-currency" data-val="AED" role="menuitem"><span class="curr-opt-sym">AED</span><span class="curr-opt-name">AED</span><span class="curr-opt-sub">Millions</span></button>
+        </div>
+      </div>
+
       <!-- Refresh / Check update button -->
       <button class="icon-btn" id="refresh-btn" data-action="refresh" title="Check for Updates" aria-label="Check Updates">
         <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -148,9 +169,10 @@
           </div>
         </div>
         <div class="inp-wrap">
-          <span class="inp-pfx">₹</span>
+          <span class="inp-pfx curr-pfx">₹</span>
           <input class="inp" type="number" id="ep-i" value="5000000" min="100000" max="100000000" aria-label="Loan Amount Input" data-sync="ep-s" data-min="100000" data-max="100000000" data-calc="emi">
         </div>
+        <div class="amt-words-badge" id="ep-words" aria-live="polite"></div>
         <div class="sl-wrap">
           <input type="range" id="ep-s" aria-label="Loan amount slider" min="100000" max="100000000" step="50000" value="5000000" data-sync-input="ep-i" data-calc="emi">
           <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Crore</span></div>
@@ -252,16 +274,18 @@
             <div class="field" style="margin-bottom:14px">
               <label class="field-lbl" for="prepay-monthly">Extra Monthly Prepayment</label>
               <div class="inp-wrap">
-                <span class="inp-pfx">₹</span>
+                <span class="inp-pfx curr-pfx">₹</span>
                 <input class="inp" type="number" id="prepay-monthly" value="0" min="0" step="500" placeholder="e.g. 5000" aria-label="Extra Monthly Prepayment" data-calc="emi">
               </div>
+              <div class="amt-words-badge" id="prepay-mo-words" aria-live="polite"></div>
             </div>
             <div class="field" style="margin-bottom:14px">
               <label class="field-lbl" for="prepay-yearly">Extra Yearly Prepayment</label>
               <div class="inp-wrap">
-                <span class="inp-pfx">₹</span>
+                <span class="inp-pfx curr-pfx">₹</span>
                 <input class="inp" type="number" id="prepay-yearly" value="0" min="0" step="5000" placeholder="e.g. 50000" aria-label="Extra Yearly Prepayment" data-calc="emi">
               </div>
+              <div class="amt-words-badge" id="prepay-yr-words" aria-live="polite"></div>
             </div>
             <div class="prepay-savings-badge" id="prepay-summary" style="display:none;">
               <div>
@@ -480,9 +504,10 @@
           </div>
         </div>
         <div class="inp-wrap">
-          <span class="inp-pfx">₹</span>
+          <span class="inp-pfx curr-pfx">₹</span>
           <input class="inp" type="number" id="sa-i" value="10000" min="500" max="500000" aria-label="Monthly Investment Amount" data-sync="sa-s" data-min="500" data-max="500000" data-calc="sip">
         </div>
+        <div class="amt-words-badge" id="sa-words" aria-live="polite"></div>
         <div class="sl-wrap">
           <input type="range" id="sa-s" aria-label="Monthly investment slider" min="500" max="500000" step="500" value="10000" data-sync-input="sa-i" data-calc="sip">
           <div class="sl-lbl"><span>₹500</span><span>₹5 Lakhs</span></div>
@@ -653,111 +678,273 @@
     </div>
   </div>
 
-  <div style="max-width:1120px;margin:0 auto;padding:12px 16px">
-    <div class="card">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:16px">
-        <div class="field" style="margin:0">
-          <label class="field-lbl" for="cl-p-i">Loan Amount</label>
-          <div class="inp-wrap">
-            <span class="inp-pfx">₹</span>
-            <input class="inp" type="number" id="cl-p-i" value="3000000" min="100000" max="100000000" aria-label="Comparison Loan Amount" data-sync="cl-p-s" data-min="100000" data-max="100000000" data-calc="cmpLoan">
+  <!-- Sub-navigation for Loans: Compare vs Balance Transfer -->
+  <div style="max-width:1120px;margin:0 auto;padding:6px 16px 10px">
+    <div class="subnav-pills" role="tablist" aria-label="Loan Tools">
+      <button class="chip active" role="tab" id="loans-subtab-btn-compare" aria-selected="true" aria-controls="loans-sub-compare" data-action="switch-loans-sub" data-val="compare">🏦 Compare Loans</button>
+      <button class="chip" role="tab" id="loans-subtab-btn-refinance" aria-selected="false" aria-controls="loans-sub-refinance" data-action="switch-loans-sub" data-val="refinance">🔄 Balance Transfer &amp; Refinance</button>
+    </div>
+  </div>
+
+  <!-- SUB: COMPARE LOANS -->
+  <div id="loans-sub-compare">
+    <div style="max-width:1120px;margin:0 auto;padding:12px 16px">
+      <div class="card">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:16px">
+          <div class="field" style="margin:0">
+            <label class="field-lbl" for="cl-p-i">Loan Amount</label>
+            <div class="inp-wrap">
+              <span class="inp-pfx curr-pfx">₹</span>
+              <input class="inp" type="number" id="cl-p-i" value="3000000" min="100000" max="100000000" aria-label="Comparison Loan Amount" data-sync="cl-p-s" data-min="100000" data-max="100000000" data-calc="cmpLoan">
+            </div>
+            <div class="amt-words-badge" id="cl-words" aria-live="polite"></div>
+            <div class="sl-wrap">
+              <input type="range" id="cl-p-s" aria-label="Comparison loan amount slider" min="100000" max="100000000" step="50000" value="3000000" data-sync-input="cl-p-i" data-calc="cmpLoan">
+              <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Cr</span></div>
+            </div>
           </div>
-          <div class="sl-wrap">
-            <input type="range" id="cl-p-s" aria-label="Comparison loan amount slider" min="100000" max="100000000" step="50000" value="3000000" data-sync-input="cl-p-i" data-calc="cmpLoan">
-            <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Cr</span></div>
+
+          <div class="field" style="margin:0">
+            <label class="field-lbl" for="cl-t-i">Tenure (Years)</label>
+            <div class="inp-wrap">
+              <input class="inp" type="number" id="cl-t-i" value="20" min="1" max="30" aria-label="Comparison Loan Tenure" data-sync="cl-t-s" data-min="1" data-max="30" data-calc="cmpLoan">
+              <span class="inp-sfx">Years</span>
+            </div>
+            <div class="sl-wrap">
+              <input type="range" id="cl-t-s" aria-label="Comparison loan tenure slider" min="1" max="30" step="1" value="20" data-sync-input="cl-t-i" data-calc="cmpLoan">
+              <div class="sl-lbl"><span>1 Yr</span><span>30 Yrs</span></div>
+            </div>
           </div>
         </div>
 
-        <div class="field" style="margin:0">
-          <label class="field-lbl" for="cl-t-i">Tenure (Years)</label>
+        <!-- Editable Custom Rates for Loan Comparison (Issue #16) -->
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--glass-border)">
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">
+            Custom Comparison Interest Rates (% p.a.)
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:12px">
+            <div class="field" style="margin:0">
+              <label class="field-lbl" for="cl-r1-i">🏠 Home Loan</label>
+              <div class="inp-wrap">
+                <input class="inp" type="number" id="cl-r1-i" value="8.5" min="1" max="30" step="0.1" aria-label="Home Loan Rate for Comparison" data-calc="cmpLoan">
+                <span class="inp-sfx">%</span>
+              </div>
+            </div>
+            <div class="field" style="margin:0">
+              <label class="field-lbl" for="cl-r2-i">🚗 Car Loan</label>
+              <div class="inp-wrap">
+                <input class="inp" type="number" id="cl-r2-i" value="9.0" min="1" max="30" step="0.1" aria-label="Car Loan Rate for Comparison" data-calc="cmpLoan">
+                <span class="inp-sfx">%</span>
+              </div>
+            </div>
+            <div class="field" style="margin:0">
+              <label class="field-lbl" for="cl-r3-i">👤 Personal Loan</label>
+              <div class="inp-wrap">
+                <input class="inp" type="number" id="cl-r3-i" value="14.0" min="1" max="40" step="0.1" aria-label="Personal Loan Rate for Comparison" data-calc="cmpLoan">
+                <span class="inp-sfx">%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loan cards -->
+    <div style="max-width:1120px;margin:0 auto;padding:0 16px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px" id="loan-cmp-cards"></div>
+
+    <!-- Loan Comparison Table -->
+    <div class="amort-sec">
+      <div class="amort-card">
+        <div class="amort-head">
+          <span class="amort-ttl">Side-by-Side Loan Cost Breakdown</span>
+          <span style="font-size:0.75rem;color:var(--text3)">Lower interest = More savings</span>
+        </div>
+        <div class="tbl-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Loan Category</th>
+                <th>Interest Rate</th>
+                <th>Monthly EMI</th>
+                <th>Total Interest</th>
+                <th>Total Outflow</th>
+                <th>Interest Burden %</th>
+              </tr>
+            </thead>
+            <tbody id="loan-cmp-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Year-wise Interest comparison -->
+    <div class="amort-sec">
+      <div class="amort-card">
+        <div class="amort-head"><span class="amort-ttl">Year-Wise Interest Comparison</span></div>
+        <div class="tbl-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th style="color:#0057d9">🏠 Home Loan</th>
+                <th style="color:#00b386">🚗 Car Loan</th>
+                <th style="color:#e8645a">👤 Personal Loan</th>
+                <th>Cheapest Choice</th>
+              </tr>
+            </thead>
+            <tbody id="loan-cmp-year-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUB: BALANCE TRANSFER & REFINANCE -->
+  <div id="loans-sub-refinance" style="display:none">
+    <div class="page-body">
+      <!-- Left: Refinance Inputs Card -->
+      <div class="card">
+        <div class="field">
+          <div class="field-head">
+            <label class="field-lbl" for="bt-p-i">Outstanding Loan Balance</label>
+            <div class="quick-presets">
+              <button type="button" class="preset-chip" data-action="set-bt-principal" data-val="2500000">₹25L</button>
+              <button type="button" class="preset-chip" data-action="set-bt-principal" data-val="4000000">₹40L</button>
+              <button type="button" class="preset-chip" data-action="set-bt-principal" data-val="6000000">₹60L</button>
+              <button type="button" class="preset-chip" data-action="set-bt-principal" data-val="10000000">₹1Cr</button>
+            </div>
+          </div>
           <div class="inp-wrap">
-            <input class="inp" type="number" id="cl-t-i" value="20" min="1" max="30" aria-label="Comparison Loan Tenure" data-sync="cl-t-s" data-min="1" data-max="30" data-calc="cmpLoan">
+            <span class="inp-pfx curr-pfx">₹</span>
+            <input class="inp" type="number" id="bt-p-i" value="4000000" min="100000" max="100000000" aria-label="Outstanding Loan Balance" data-sync="bt-p-s" data-min="100000" data-max="100000000" data-calc="refinance">
+          </div>
+          <div class="amt-words-badge" id="bt-words" aria-live="polite"></div>
+          <div class="sl-wrap">
+            <input type="range" id="bt-p-s" aria-label="Outstanding principal slider" min="100000" max="100000000" step="50000" value="4000000" data-sync-input="bt-p-i" data-calc="refinance">
+            <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Crore</span></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-lbl" for="bt-t-i">Remaining Tenure (Years)</label>
+          <div class="inp-wrap">
+            <input class="inp" type="number" id="bt-t-i" value="15" min="1" max="30" aria-label="Remaining Loan Tenure" data-sync="bt-t-s" data-min="1" data-max="30" data-calc="refinance">
             <span class="inp-sfx">Years</span>
           </div>
           <div class="sl-wrap">
-            <input type="range" id="cl-t-s" aria-label="Comparison loan tenure slider" min="1" max="30" step="1" value="20" data-sync-input="cl-t-i" data-calc="cmpLoan">
+            <input type="range" id="bt-t-s" aria-label="Remaining tenure slider" min="1" max="30" step="1" value="15" data-sync-input="bt-t-i" data-calc="refinance">
             <div class="sl-lbl"><span>1 Yr</span><span>30 Yrs</span></div>
           </div>
         </div>
-      </div>
 
-      <!-- Editable Custom Rates for Loan Comparison (Issue #16) -->
-      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--glass-border)">
-        <div style="font-size:0.75rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">
-          Custom Comparison Interest Rates (% p.a.)
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:12px">
-          <div class="field" style="margin:0">
-            <label class="field-lbl" for="cl-r1-i">🏠 Home Loan</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field">
+            <label class="field-lbl" for="bt-r1-i">Existing Bank Rate</label>
             <div class="inp-wrap">
-              <input class="inp" type="number" id="cl-r1-i" value="8.5" min="1" max="30" step="0.1" aria-label="Home Loan Rate for Comparison" data-calc="cmpLoan">
+              <input class="inp" type="number" id="bt-r1-i" value="9.5" min="1" max="30" step="0.1" aria-label="Existing Interest Rate" data-sync="bt-r1-s" data-min="1" data-max="30" data-calc="refinance">
               <span class="inp-sfx">%</span>
             </div>
-          </div>
-          <div class="field" style="margin:0">
-            <label class="field-lbl" for="cl-r2-i">🚗 Car Loan</label>
-            <div class="inp-wrap">
-              <input class="inp" type="number" id="cl-r2-i" value="9.0" min="1" max="30" step="0.1" aria-label="Car Loan Rate for Comparison" data-calc="cmpLoan">
-              <span class="inp-sfx">%</span>
+            <div class="sl-wrap">
+              <input type="range" id="bt-r1-s" aria-label="Existing rate slider" min="1" max="30" step="0.1" value="9.5" data-sync-input="bt-r1-i" data-calc="refinance">
+              <div class="sl-lbl"><span>1%</span><span>30%</span></div>
             </div>
           </div>
-          <div class="field" style="margin:0">
-            <label class="field-lbl" for="cl-r3-i">👤 Personal Loan</label>
+          <div class="field">
+            <label class="field-lbl" for="bt-r2-i">New Bank Offer</label>
             <div class="inp-wrap">
-              <input class="inp" type="number" id="cl-r3-i" value="14.0" min="1" max="40" step="0.1" aria-label="Personal Loan Rate for Comparison" data-calc="cmpLoan">
-              <span class="inp-sfx">%</span>
+              <input class="inp" type="number" id="bt-r2-i" value="8.4" min="1" max="30" step="0.1" aria-label="New Bank Interest Rate" data-sync="bt-r2-s" data-min="1" data-max="30" data-calc="refinance">
+              <span class="inp-sfx" style="color:var(--green);font-weight:800">%</span>
+            </div>
+            <div class="sl-wrap">
+              <input type="range" id="bt-r2-s" aria-label="New bank rate slider" min="1" max="30" step="0.1" value="8.4" data-sync-input="bt-r2-i" data-calc="refinance">
+              <div class="sl-lbl"><span>1%</span><span>30%</span></div>
             </div>
           </div>
         </div>
+
+        <div class="field" style="margin-bottom:0">
+          <div class="field-head">
+            <label class="field-lbl" for="bt-fee-i">Transfer Processing &amp; Legal Fee</label>
+            <div class="fee-type-toggle">
+              <button type="button" class="fee-type-btn active" data-action="set-bt-fee-type" data-val="pct" data-bt-fee-type="pct">% of Loan</button>
+              <button type="button" class="fee-type-btn" data-action="set-bt-fee-type" data-val="flat" data-bt-fee-type="flat">Flat Cash</button>
+            </div>
+          </div>
+          <div class="inp-wrap">
+            <span class="inp-pfx curr-pfx" id="bt-fee-pfx" style="display:none">₹</span>
+            <input class="inp" type="number" id="bt-fee-i" value="0.5" min="0" step="0.1" aria-label="Transfer Fee" data-calc="refinance">
+            <span class="inp-sfx" id="bt-fee-sfx">%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Refinance Results Card -->
+      <div class="card">
+        <div class="bt-hero-card">
+          <div class="bt-hero-lbl">Net Lifetime Interest Saved</div>
+          <div class="bt-hero-amt" id="bt-net-savings">₹4,45,300</div>
+          <div class="bt-hero-sub">After deducting all transfer processing &amp; switching costs</div>
+        </div>
+
+        <div class="res-row res-main">
+          <span class="res-key" style="font-weight:700;color:var(--text);font-size:.92rem">Monthly EMI Reduction</span>
+          <span class="res-val big cg" id="bt-monthly-savings">₹2,585/mo</span>
+        </div>
+
+        <div class="bt-stat-grid">
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">Current Monthly EMI</div>
+            <div class="bt-stat-val tr" id="bt-emi-current">₹41,768</div>
+          </div>
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">New Monthly EMI</div>
+            <div class="bt-stat-val tg" id="bt-emi-new">₹39,183</div>
+          </div>
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">Gross Interest Saved</div>
+            <div class="bt-stat-val tg" id="bt-interest-saved">₹4,65,300</div>
+          </div>
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">Processing Cost</div>
+            <div class="bt-stat-val tr" id="bt-fee-amt">₹20,000</div>
+          </div>
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">Current Total Interest</div>
+            <div class="bt-stat-val" id="bt-current-int">₹35,18,240</div>
+          </div>
+          <div class="bt-stat-box">
+            <div class="bt-stat-lbl">Break-Even Time</div>
+            <div class="bt-stat-val tb" id="bt-breakeven">8 Months</div>
+          </div>
+        </div>
+
+        <div id="bt-verdict" class="bt-verdict-badge good">
+          <span>✅ Highly Recommended: Switching to 8.4% saves you <b>₹4.45 Lakhs</b> net!</span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Loan cards -->
-  <div style="max-width:1120px;margin:0 auto;padding:0 16px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px" id="loan-cmp-cards"></div>
-
-  <!-- Loan Comparison Table -->
-  <div class="amort-sec">
-    <div class="amort-card">
-      <div class="amort-head">
-        <span class="amort-ttl">Side-by-Side Loan Cost Breakdown</span>
-        <span style="font-size:0.75rem;color:var(--text3)">Lower interest = More savings</span>
-      </div>
-      <div class="tbl-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Loan Category</th>
-              <th>Interest Rate</th>
-              <th>Monthly EMI</th>
-              <th>Total Interest</th>
-              <th>Total Outflow</th>
-              <th>Interest Burden %</th>
-            </tr>
-          </thead>
-          <tbody id="loan-cmp-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Year-wise Interest comparison -->
-  <div class="amort-sec">
-    <div class="amort-card">
-      <div class="amort-head"><span class="amort-ttl">Year-Wise Interest Comparison</span></div>
-      <div class="tbl-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Year</th>
-              <th style="color:#0057d9">🏠 Home Loan</th>
-              <th style="color:#00b386">🚗 Car Loan</th>
-              <th style="color:#e8645a">👤 Personal Loan</th>
-              <th>Cheapest Choice</th>
-            </tr>
-          </thead>
-          <tbody id="loan-cmp-year-tbody"></tbody>
-        </table>
+    <!-- Balance Transfer Amortization Table -->
+    <div class="amort-sec">
+      <div class="amort-card">
+        <div class="amort-head">
+          <span class="amort-ttl">Year-by-Year Switching Comparison</span>
+          <span style="font-size:0.75rem;color:var(--text3)">Yearly outflow under Current vs. New Bank</span>
+        </div>
+        <div class="tbl-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Current Bank (EMI + Int)</th>
+                <th>New Bank (EMI + Int)</th>
+                <th>Annual Cash Saved</th>
+                <th>Cumulative Savings</th>
+              </tr>
+            </thead>
+            <tbody id="bt-schedule-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -796,9 +983,10 @@
         <div class="field" style="margin:0">
           <label class="field-lbl" for="ca-i">Investment Corpus</label>
           <div class="inp-wrap">
-            <span class="inp-pfx">₹</span>
+            <span class="inp-pfx curr-pfx">₹</span>
             <input class="inp" type="number" id="ca-i" value="100000" min="1000" max="10000000" aria-label="Investment Corpus" data-sync="ca-s" data-min="1000" data-max="10000000" data-calc="cmp">
           </div>
+          <div class="amt-words-badge" id="ca-words" aria-live="polite"></div>
           <div class="sl-wrap">
             <input type="range" id="ca-s" aria-label="Investment corpus slider" min="1000" max="10000000" step="5000" value="100000" data-sync-input="ca-i" data-calc="cmp">
             <div class="sl-lbl"><span>₹1K</span><span>₹1 Crore</span></div>
@@ -837,7 +1025,8 @@
       <div class="card">
         <div class="field">
           <label class="field-lbl" for="la-i">Total One-Time Investment</label>
-          <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="la-i" value="500000" min="1000" max="10000000" aria-label="Total One-Time Investment" data-sync="la-s" data-min="1000" data-max="10000000" data-calc="lumpsum"></div>
+          <div class="inp-wrap"><span class="inp-pfx curr-pfx">₹</span><input class="inp" type="number" id="la-i" value="500000" min="1000" max="10000000" aria-label="Total One-Time Investment" data-sync="la-s" data-min="1000" data-max="10000000" data-calc="lumpsum"></div>
+          <div class="amt-words-badge" id="la-words" aria-live="polite"></div>
           <div class="sl-wrap"><input type="range" id="la-s" aria-label="Lumpsum investment slider" min="1000" max="10000000" step="5000" value="500000" data-sync-input="la-i" data-calc="lumpsum"><div class="sl-lbl"><span>₹1K</span><span>₹1Cr</span></div></div>
         </div>
         <div class="field">
@@ -885,7 +1074,8 @@
     <div class="page-body">
       <div class="card">
         <div class="field"><label class="field-lbl" for="fp-i">Deposit Amount</label>
-          <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="fp-i" value="100000" min="1000" max="5000000" aria-label="FD Deposit Amount" data-sync="fp-s" data-min="1000" data-max="5000000" data-calc="fd"></div>
+          <div class="inp-wrap"><span class="inp-pfx curr-pfx">₹</span><input class="inp" type="number" id="fp-i" value="100000" min="1000" max="5000000" aria-label="FD Deposit Amount" data-sync="fp-s" data-min="1000" data-max="5000000" data-calc="fd"></div>
+          <div class="amt-words-badge" id="fp-words" aria-live="polite"></div>
           <div class="sl-wrap"><input type="range" id="fp-s" aria-label="FD deposit amount slider" min="1000" max="5000000" step="5000" value="100000" data-sync-input="fp-i" data-calc="fd"><div class="sl-lbl"><span>₹1K</span><span>₹50L</span></div></div>
         </div>
         <div class="field"><label class="field-lbl" for="fr-i">Interest Rate (p.a)</label>
@@ -933,7 +1123,8 @@
     <div class="page-body">
       <div class="card">
         <div class="field"><label class="field-lbl" for="ra-i">Monthly Deposit</label>
-          <div class="inp-wrap"><span class="inp-pfx">₹</span><input class="inp" type="number" id="ra-i" value="5000" min="100" max="200000" aria-label="RD Monthly Deposit" data-sync="ra-s" data-min="100" data-max="200000" data-calc="rd"></div>
+          <div class="inp-wrap"><span class="inp-pfx curr-pfx">₹</span><input class="inp" type="number" id="ra-i" value="5000" min="100" max="200000" aria-label="RD Monthly Deposit" data-sync="ra-s" data-min="100" data-max="200000" data-calc="rd"></div>
+          <div class="amt-words-badge" id="ra-words" aria-live="polite"></div>
           <div class="sl-wrap"><input type="range" id="ra-s" aria-label="RD monthly deposit slider" min="100" max="200000" step="500" value="5000" data-sync-input="ra-i" data-calc="rd"><div class="sl-lbl"><span>₹100</span><span>₹2L</span></div></div>
         </div>
         <div class="field"><label class="field-lbl" for="rr-i">Interest Rate (p.a)</label>
