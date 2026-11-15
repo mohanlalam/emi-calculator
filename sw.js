@@ -1,5 +1,5 @@
 // Bump CACHE_NAME whenever app.js, index.html, or styles.css are modified to ensure clients receive updates
-const CACHE_NAME = 'emi-calc-v14';
+const CACHE_NAME = 'emi-calc-v15';
 const ASSETS = [
   './',
   './index.html',
@@ -11,8 +11,9 @@ const ASSETS = [
   './icon-512.png'
 ];
 
-// Install: Cache core assets (waits until user confirms or activates)
+// Install: Cache core assets (auto-activate immediately on iOS PWA)
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);

@@ -520,7 +520,7 @@ input[type=range]::-moz-range-track { background: var(--slider-track); border-ra
 .prepay-stat-lbl { font-size: 0.68rem; font-weight: 600; color: var(--text2); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.4px; }
 
 /* ============ TABLES ============ */
-.amort-sec { max-width: 1140px; margin: 0 auto 24px; padding: 0 18px; }
+.amort-sec { max-width: 1140px; margin: 0 auto 32px; padding: 0 18px; }
 .amort-card {
   background: var(--card); border-radius: var(--radius); border: 1px solid var(--glass-border);
   box-shadow: var(--shadow); overflow: hidden; backdrop-filter: blur(20px);
@@ -630,12 +630,24 @@ tfoot td:first-child {
   text-transform: uppercase;
   font-size: 0.76rem;
   letter-spacing: 0.5px;
+  padding-left: 20px;
+}
+tfoot td:last-child {
+  padding-right: 20px;
 }
 tbody tr:last-child {
   border-bottom: none;
 }
 tbody tr:last-child td {
   padding-bottom: 14px;
+}
+tbody td:first-child,
+thead th:first-child {
+  padding-left: 20px;
+}
+tbody td:last-child,
+thead th:last-child {
+  padding-right: 20px;
 }
 
 /* ============ PANELS ============ */
@@ -919,6 +931,16 @@ tbody tr:last-child td {
   tbody td { padding: 9px 12px; font-size: 0.75rem; }
   tfoot td { padding: 10px 12px 12px; font-size: 0.76rem; }
   tfoot td:first-child { font-size: 0.72rem; }
+  tbody td:first-child,
+  thead th:first-child,
+  tfoot td:first-child {
+    padding-left: 14px;
+  }
+  tbody td:last-child,
+  thead th:last-child,
+  tfoot td:last-child {
+    padding-right: 14px;
+  }
   .buy-row { gap: 6px; }
   .buy-num { width: 24px; height: 24px; font-size: 0.68rem; }
   .del-btn { width: 28px; height: 28px; font-size: 1rem; }

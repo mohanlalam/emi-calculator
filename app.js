@@ -3379,7 +3379,7 @@ function forceCheckUpdate() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     // Cache bust query string ensures Safari always fetches updated sw script
-    navigator.serviceWorker.register('./sw.js?v=4', { scope: './' })
+    navigator.serviceWorker.register('./sw.js?v=15', { scope: './' })
       .then(reg => {
         // Check for updates on startup
         reg.update();
