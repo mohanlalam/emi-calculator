@@ -1,5 +1,5 @@
 // Bump CACHE_NAME whenever app.js, index.html, or styles.css are modified to ensure clients receive updates
-const CACHE_NAME = 'emi-calc-v11';
+const CACHE_NAME = 'emi-calc-v12';
 const ASSETS = [
   './',
   './index.html',

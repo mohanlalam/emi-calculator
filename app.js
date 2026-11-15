@@ -1920,7 +1920,7 @@ function calcBalanceTransfer() {
 
   if (!pInput || !tInput || !r1Input || !r2Input) return;
 
-  const P = Math.min(Math.max(parseFloat(pInput.value) || 0, 100000), 100000000);
+  const P = Math.min(Math.max(parseFloat(pInput.value) || 0, 1000), 100000000);
   const T = Math.min(Math.max(parseFloat(tInput.value) || 0, 1), 30);
   const r1 = Math.min(Math.max(parseFloat(r1Input.value) || 0, 0.1), 30);
   const r2 = Math.min(Math.max(parseFloat(r2Input.value) || 0, 0.1), 30);
@@ -2108,7 +2108,7 @@ function calcTopUp() {
 
   if (!pInp || !rInp || !tInp || !elapInp || !amtInp || !topRateInp) return;
 
-  const P0 = Math.min(Math.max(parseFloat(pInp.value) || 0, 10000), 100000000);
+  const P0 = Math.min(Math.max(parseFloat(pInp.value) || 0, 1000), 100000000);
   const r0 = Math.min(Math.max(parseFloat(rInp.value) || 0, 0.1), 30);
   const T0 = Math.min(Math.max(parseFloat(tInp.value) || 0, 1), 35);
   const rawElapsed = parseFloat(elapInp.value) || 1;
@@ -2116,7 +2116,7 @@ function calcTopUp() {
   const maxAllowedMonths = Math.max(1, (T0 * 12) - 1);
   const actualElapsedMonths = Math.min(Math.max(1, elapsedMonths), maxAllowedMonths);
 
-  const topAmt = Math.min(Math.max(parseFloat(amtInp.value) || 0, 10000), 50000000);
+  const topAmt = Math.min(Math.max(parseFloat(amtInp.value) || 0, 1000), 50000000);
   const topRate = Math.min(Math.max(parseFloat(topRateInp.value) || 0, 0.1), 30);
   const newTenureYrs = Math.min(Math.max(parseFloat(newTenureInp ? newTenureInp.value : (T0 - (actualElapsedMonths/12))) || 1, 1), 35);
   const newTenureMonths = Math.round(newTenureYrs * 12);

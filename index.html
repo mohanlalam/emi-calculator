@@ -170,13 +170,14 @@
         </div>
         <div class="inp-wrap">
           <span class="inp-pfx curr-pfx">₹</span>
-          <input class="inp" type="number" id="ep-i" value="5000000" min="100000" max="100000000" aria-label="Loan Amount Input" data-sync="ep-s" data-min="100000" data-max="100000000" data-calc="emi">
+          <input class="inp" type="number" id="ep-i" value="5000000" min="1000" max="100000000" aria-label="Loan Amount Input" data-sync="ep-s" data-min="1000" data-max="100000000" data-calc="emi">
         </div>
         <div class="amt-words-badge" id="ep-words" aria-live="polite"></div>
         <div class="sl-wrap">
-          <input type="range" id="ep-s" aria-label="Loan amount slider" min="100000" max="100000000" step="50000" value="5000000" data-sync-input="ep-i" data-calc="emi">
-          <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Crore</span></div>
+          <input type="range" id="ep-s" aria-label="Loan amount slider" min="1000" max="100000000" step="1000" value="5000000" data-sync-input="ep-i" data-calc="emi">
+          <div class="sl-lbl"><span>₹1K</span><span>₹10 Crore</span></div>
           <div class="sl-milestones">
+            <button type="button" class="sl-milestone-btn" data-action="set-loan-amount" data-val="100000">1L</button>
             <button type="button" class="sl-milestone-btn" data-action="set-loan-amount" data-val="1000000">10L</button>
             <button type="button" class="sl-milestone-btn" data-action="set-loan-amount" data-val="2500000">25L</button>
             <button type="button" class="sl-milestone-btn" data-action="set-loan-amount" data-val="5000000">50L</button>
@@ -696,12 +697,12 @@
             <label class="field-lbl" for="cl-p-i">Loan Amount</label>
             <div class="inp-wrap">
               <span class="inp-pfx curr-pfx">₹</span>
-              <input class="inp" type="number" id="cl-p-i" value="3000000" min="100000" max="100000000" aria-label="Comparison Loan Amount" data-sync="cl-p-s" data-min="100000" data-max="100000000" data-calc="cmpLoan">
+              <input class="inp" type="number" id="cl-p-i" value="3000000" min="1000" max="100000000" aria-label="Comparison Loan Amount" data-sync="cl-p-s" data-min="1000" data-max="100000000" data-calc="cmpLoan">
             </div>
             <div class="amt-words-badge" id="cl-words" aria-live="polite"></div>
             <div class="sl-wrap">
-              <input type="range" id="cl-p-s" aria-label="Comparison loan amount slider" min="100000" max="100000000" step="50000" value="3000000" data-sync-input="cl-p-i" data-calc="cmpLoan">
-              <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Cr</span></div>
+              <input type="range" id="cl-p-s" aria-label="Comparison loan amount slider" min="1000" max="100000000" step="1000" value="3000000" data-sync-input="cl-p-i" data-calc="cmpLoan">
+              <div class="sl-lbl"><span>₹1K</span><span>₹10 Cr</span></div>
             </div>
           </div>
 
@@ -817,12 +818,12 @@
           </div>
           <div class="inp-wrap">
             <span class="inp-pfx curr-pfx">₹</span>
-            <input class="inp" type="number" id="bt-p-i" value="4000000" min="100000" max="100000000" aria-label="Outstanding Loan Balance" data-sync="bt-p-s" data-min="100000" data-max="100000000" data-calc="refinance">
+            <input class="inp" type="number" id="bt-p-i" value="4000000" min="1000" max="100000000" aria-label="Outstanding Loan Balance" data-sync="bt-p-s" data-min="1000" data-max="100000000" data-calc="refinance">
           </div>
           <div class="amt-words-badge" id="bt-words" aria-live="polite"></div>
           <div class="sl-wrap">
-            <input type="range" id="bt-p-s" aria-label="Outstanding principal slider" min="100000" max="100000000" step="50000" value="4000000" data-sync-input="bt-p-i" data-calc="refinance">
-            <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Crore</span></div>
+            <input type="range" id="bt-p-s" aria-label="Outstanding principal slider" min="1000" max="100000000" step="1000" value="4000000" data-sync-input="bt-p-i" data-calc="refinance">
+            <div class="sl-lbl"><span>₹1K</span><span>₹10 Crore</span></div>
           </div>
         </div>
 
@@ -972,12 +973,12 @@
           </div>
           <div class="inp-wrap">
             <span class="inp-pfx curr-pfx">₹</span>
-            <input class="inp" type="number" id="tu-p-i" value="5000000" min="50000" max="100000000" aria-label="Original Loan Amount" data-sync="tu-p-s" data-min="50000" data-max="100000000" data-calc="topup">
+            <input class="inp" type="number" id="tu-p-i" value="5000000" min="1000" max="100000000" aria-label="Original Loan Amount" data-sync="tu-p-s" data-min="1000" data-max="100000000" data-calc="topup">
           </div>
           <div class="amt-words-badge" id="tu-p-words" aria-live="polite"></div>
           <div class="sl-wrap">
-            <input type="range" id="tu-p-s" aria-label="Original loan amount slider" min="100000" max="100000000" step="50000" value="5000000" data-sync-input="tu-p-i" data-calc="topup">
-            <div class="sl-lbl"><span>₹1 Lakh</span><span>₹10 Crore</span></div>
+            <input type="range" id="tu-p-s" aria-label="Original loan amount slider" min="1000" max="100000000" step="1000" value="5000000" data-sync-input="tu-p-i" data-calc="topup">
+            <div class="sl-lbl"><span>₹1K</span><span>₹10 Crore</span></div>
           </div>
         </div>
 
@@ -1043,12 +1044,12 @@
           </div>
           <div class="inp-wrap">
             <span class="inp-pfx curr-pfx">₹</span>
-            <input class="inp" type="number" id="tu-amt-i" value="1000000" min="20000" max="50000000" aria-label="Top-Up Amount" data-sync="tu-amt-s" data-min="20000" data-max="50000000" data-calc="topup">
+            <input class="inp" type="number" id="tu-amt-i" value="1000000" min="1000" max="50000000" aria-label="Top-Up Amount" data-sync="tu-amt-s" data-min="1000" data-max="50000000" data-calc="topup">
           </div>
           <div class="amt-words-badge" id="tu-amt-words" aria-live="polite"></div>
           <div class="sl-wrap">
-            <input type="range" id="tu-amt-s" aria-label="Top-Up amount slider" min="50000" max="20000000" step="50000" value="1000000" data-sync-input="tu-amt-i" data-calc="topup">
-            <div class="sl-lbl"><span>₹50K</span><span>₹2 Crore</span></div>
+            <input type="range" id="tu-amt-s" aria-label="Top-Up amount slider" min="1000" max="20000000" step="1000" value="1000000" data-sync-input="tu-amt-i" data-calc="topup">
+            <div class="sl-lbl"><span>₹1K</span><span>₹2 Crore</span></div>
           </div>
         </div>
 
