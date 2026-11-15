@@ -1888,7 +1888,7 @@ function setBtPrincipal(val) {
 }
 
 function setBtFeeType(type, el) {
-  document.querySelectorAll('.fee-type-btn').forEach(btn => {
+  document.querySelectorAll('.fee-type-btn[data-bt-fee-type]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.btFeeType === type);
   });
   const pfx = document.getElementById('bt-fee-pfx');
@@ -2040,6 +2040,8 @@ function setTuElapsedUnit(unit) {
       elapInp.value = val;
       elapInp.min = 1;
       elapInp.max = Math.max(1, origTenure - 1);
+      elapInp.dataset.min = 1;
+      elapInp.dataset.max = Math.max(1, origTenure - 1);
       elapSl.min = 1;
       elapSl.max = Math.max(1, origTenure - 1);
       elapSl.value = val;
@@ -2057,6 +2059,8 @@ function setTuElapsedUnit(unit) {
       elapInp.value = val;
       elapInp.min = 1;
       elapInp.max = maxMos;
+      elapInp.dataset.min = 1;
+      elapInp.dataset.max = maxMos;
       elapSl.min = 1;
       elapSl.max = maxMos;
       elapSl.value = val;
