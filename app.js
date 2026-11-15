@@ -645,9 +645,10 @@ function updateWhatIfScenarios(P, rate, nMonths, baselineEmi, baselineTotalInt) 
   `;
 }
 
-// ─── 7. AMORTIZATION CANVAS CHART VISUALIZER ───
+// ─── 7. AMORTIZATION CANVAS CHART VISUALIZER & SCRUBBER ───
 window._lastYearlyAmortData = null;
-function drawAmortizationChart(yearlyData) {
+
+function drawAmortizationChart(yearlyData, activeIndex = null) {
   const canvas = document.getElementById('amort-chart');
   if (!canvas || !yearlyData || yearlyData.length === 0) return;
   const ctx = canvas.getContext('2d');
@@ -679,6 +680,7 @@ function drawAmortizationChart(yearlyData) {
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
   const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
   const textColor = isDark ? '#8b9cc4' : '#4a5878';
+  const sym = currentCurrency.symbol === 'AED' ? 'AED ' : currentCurrency.symbol;
 
   // Horizontal Grid Lines
   ctx.strokeStyle = gridColor;
@@ -695,8 +697,8 @@ function drawAmortizationChart(yearlyData) {
     ctx.stroke();
 
     const val = maxBarSum * (1 - i / 3);
-    const label = val >= 1e7 ? (val/1e7).toFixed(1) + 'Cr' : val >= 1e5 ? (val/1e5).toFixed(0) + 'L' : (val/1000).toFixed(0) + 'k';
-    ctx.fillText('₹' + label, padding.left - 8, y + 3);
+    const label = val >= 1e7 ? (val / 1e7).toFixed(1) + 'Cr' : val >= 1e5 ? (val / 1e5).toFixed(0) + 'L' : (val / 1000).toFixed(0) + 'k';
+    ctx.fillText(sym + label, padding.left - 8, y + 3);
   }
 
   // Stacked Bars (Principal + Interest)
@@ -748,11 +750,44 @@ function drawAmortizationChart(yearlyData) {
     else ctx.lineTo(x, y);
   });
   ctx.stroke();
+
+  // Vertical Scrub hairline & glowing highlight
+  if (activeIndex !== null && activeIndex >= 0 && activeIndex < count) {
+    const d = yearlyData[activeIndex];
+    const ax = padding.left + activeIndex * step + step / 2;
+    const ay = padding.top + chartH - (d.balance / maxBal) * chartH;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(ax, padding.top);
+    ctx.lineTo(ax, padding.top + chartH);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.arc(ax, ay, 8, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(ax, ay, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#38bdf8';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(ax, ay, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+  }
 }
 
-// ─── 8. SIP WEALTH CANVAS CHART VISUALIZER ───
+// ─── 8. SIP WEALTH CANVAS CHART VISUALIZER & SCRUBBER ───
 window._lastSipChartData = null;
-function drawSipChart(sipData) {
+
+function drawSipChart(sipData, activeIndex = null) {
   const canvas = document.getElementById('sip-chart');
   if (!canvas || !sipData || sipData.length === 0) return;
   const ctx = canvas.getContext('2d');
@@ -780,6 +815,7 @@ function drawSipChart(sipData) {
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
   const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
   const textColor = isDark ? '#8b9cc4' : '#4a5878';
+  const sym = currentCurrency.symbol === 'AED' ? 'AED ' : currentCurrency.symbol;
 
   ctx.strokeStyle = gridColor;
   ctx.lineWidth = 1;
@@ -795,8 +831,8 @@ function drawSipChart(sipData) {
     ctx.stroke();
 
     const val = maxVal * (1 - i / 3);
-    const label = val >= 1e7 ? (val/1e7).toFixed(1) + 'Cr' : val >= 1e5 ? (val/1e5).toFixed(0) + 'L' : (val/1000).toFixed(0) + 'k';
-    ctx.fillText('₹' + label, padding.left - 8, y + 3);
+    const label = val >= 1e7 ? (val / 1e7).toFixed(1) + 'Cr' : val >= 1e5 ? (val / 1e5).toFixed(0) + 'L' : (val / 1000).toFixed(0) + 'k';
+    ctx.fillText(sym + label, padding.left - 8, y + 3);
   }
 
   const count = sipData.length;
@@ -833,6 +869,163 @@ function drawSipChart(sipData) {
       ctx.fillText('Y' + d.year, x + barWidth / 2, yBase + 16);
     }
   });
+
+  // Vertical Scrub hairline & glowing highlight
+  if (activeIndex !== null && activeIndex >= 0 && activeIndex < count) {
+    const d = sipData[activeIndex];
+    const ax = padding.left + activeIndex * step + step / 2;
+    const ay = padding.top + chartH - ((d.val || 0) / maxVal) * chartH;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0, 229, 160, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(ax, padding.top);
+    ctx.lineTo(ax, padding.top + chartH);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.arc(ax, ay, 8, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 229, 160, 0.25)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(ax, ay, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#00e5a0';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(ax, ay, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+  }
+}
+
+// ─── CANVAS CHART SCRUBBING ENGINE ───
+function attachChartScrubber(canvasId, tooltipId, getData, drawFn, getTooltipHtml) {
+  const canvas = document.getElementById(canvasId);
+  const tooltip = document.getElementById(tooltipId);
+  if (!canvas || !tooltip) return;
+
+  function handleScrub(e) {
+    const data = getData();
+    if (!data || data.length === 0) return;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+    if (clientX === undefined) return;
+    const x = clientX - rect.left;
+    const padding = { left: 54, right: 24 };
+    const chartW = rect.width - padding.left - padding.right;
+    const count = data.length;
+    const step = chartW / count;
+
+    if (x < padding.left || x > rect.width - padding.right) {
+      tooltip.classList.remove('visible');
+      drawFn(data);
+      return;
+    }
+
+    const idx = Math.min(count - 1, Math.max(0, Math.floor((x - padding.left) / step)));
+    drawFn(data, idx);
+
+    tooltip.innerHTML = getTooltipHtml(data[idx]);
+    const tipX = padding.left + idx * step + step / 2;
+    tooltip.style.left = `${Math.max(70, Math.min(rect.width - 70, tipX))}px`;
+    tooltip.classList.add('visible');
+  }
+
+  function handleLeave() {
+    tooltip.classList.remove('visible');
+    const data = getData();
+    if (data) drawFn(data);
+  }
+
+  canvas.addEventListener('mousemove', handleScrub);
+  canvas.addEventListener('mouseleave', handleLeave);
+  canvas.addEventListener('touchstart', handleScrub, { passive: true });
+  canvas.addEventListener('touchmove', handleScrub, { passive: true });
+  canvas.addEventListener('touchend', handleLeave, { passive: true });
+  canvas.addEventListener('touchcancel', handleLeave, { passive: true });
+}
+
+function initChartScrubbing() {
+  attachChartScrubber('amort-chart', 'amort-chart-tooltip', () => window._lastYearlyAmortData, drawAmortizationChart, (d) => {
+    return `
+      <div class="scrub-tt-year">Year ${d.year}</div>
+      <div class="scrub-tt-row"><span style="color:#38bdf8">Balance:</span><span class="scrub-tt-val">${fmt(d.balance)}</span></div>
+      <div class="scrub-tt-row"><span style="color:var(--green)">Principal:</span><span class="scrub-tt-val">${fmt(d.principal)}</span></div>
+      <div class="scrub-tt-row"><span style="color:var(--red)">Interest:</span><span class="scrub-tt-val">${fmt(d.interest)}</span></div>
+    `;
+  });
+
+  attachChartScrubber('sip-chart', 'sip-chart-tooltip', () => window._lastSipChartData, drawSipChart, (d) => {
+    return `
+      <div class="scrub-tt-year">Year ${d.year}</div>
+      <div class="scrub-tt-row"><span style="color:var(--green)">Portfolio:</span><span class="scrub-tt-val">${fmt(d.val)}</span></div>
+      <div class="scrub-tt-row"><span style="color:var(--blue)">Deposited:</span><span class="scrub-tt-val">${fmt(d.invested)}</span></div>
+      <div class="scrub-tt-row"><span style="color:var(--red)">Gains:</span><span class="scrub-tt-val">${fmt(d.gains)}</span></div>
+    `;
+  });
+}
+
+// ─── SMART FINANCIAL INSIGHT ENGINE ───
+function updateEmiInsight(P, r, n, emi, totalInt, hasPrepay, savedInt, savedMonths) {
+  const el = document.getElementById('emi-insight-text');
+  if (!el) return;
+
+  if (hasPrepay && savedMonths > 0) {
+    const savedY = (savedMonths / 12).toFixed(1);
+    el.innerHTML = `<strong>Prepayment Advantage:</strong> Your extra payments retire this debt <span class="h-green">${savedY} years early</span> and eliminate <span class="h-green">${fmt(savedInt)}</span> in pure interest burden!`;
+  } else {
+    const extra5Pct = Math.max(100, Math.round(emi * 0.05));
+    let simMonths = 0, simTotalInt = 0, simBal = P;
+    while (simMonths < n && simBal > 0.01) {
+      simMonths++;
+      const ip = simBal * r;
+      simTotalInt += ip;
+      const pp = Math.min((emi + extra5Pct) - ip, simBal);
+      if (pp <= 0) break;
+      simBal -= pp;
+    }
+    const simSavedInt = Math.max(0, totalInt - simTotalInt);
+    const simSavedY = ((n - simMonths) / 12).toFixed(1);
+    el.innerHTML = `<strong>Smart Pro-Tip:</strong> Paying just 5% extra (<span class="h-green">${fmt(extra5Pct)}/mo</span>) would finish this loan <span class="h-green">~${simSavedY} years earlier</span> and save <span class="h-green">~${fmt(simSavedInt)}</span> in interest!`;
+  }
+}
+
+function updateSipInsight(inv, ret, corpus, yr, su) {
+  const el = document.getElementById('sip-insight-text');
+  if (!el) return;
+  const mul = inv > 0 ? (corpus / inv).toFixed(2) : '1.0';
+  el.innerHTML = `<strong>Wealth Compounder:</strong> Over <span class="h-blue">${yr} years</span>${su > 0 ? ' with a <strong>' + su + '% annual step-up</strong>' : ''}, your deposited capital of ${fmt(inv)} compounds into <span class="h-green">${fmt(corpus)}</span> (<span class="h-green">${mul}x</span> multiplier), generating <span class="h-green">${fmt(ret)}</span> purely from compounding returns!`;
+}
+
+function updateBtInsight(netSavings, paybackMonths, r1, r2) {
+  const el = document.getElementById('bt-insight-text');
+  if (!el) return;
+  if (netSavings > 0) {
+    el.innerHTML = `<strong>Refinance Verdict:</strong> Lowering your interest rate from ${r1}% to <span class="h-green">${r2}%</span> saves you a net <span class="h-green">${fmt(netSavings)}</span> after all fees, with a break-even payback period of just <span class="h-blue">${paybackMonths} months</span>!`;
+  } else {
+    el.innerHTML = `<strong>Refinance Verdict:</strong> Switching fees outweigh the rate reduction at current parameters. Staying with your current lender is more cost-effective.`;
+  }
+}
+
+function updateTuInsight(res1, res2, res3) {
+  const el = document.getElementById('tu-insight-text');
+  if (!el || !res1 || !res2 || !res3) return;
+  const scenarios = [
+    { name: 'Consolidated Merge (Scenario 1)', int: res1.totalInterest, emi: res1.mergedEMI },
+    { name: 'Separate Tranches (Scenario 2)', int: res2.totalInterest, emi: res2.combinedEMI },
+    { name: 'Keep Same EMI (Scenario 3)', int: res3.totalInterest, emi: res3.targetEMI }
+  ];
+  scenarios.sort((a, b) => a.int - b.int);
+  const best = scenarios[0];
+  const worst = scenarios[scenarios.length - 1];
+  const diffSavings = Math.max(0, worst.int - best.int);
+
+  el.innerHTML = `<strong>Recommended Strategy:</strong> <span class="h-green">${best.name}</span> delivers the lowest lifetime interest (<span class="h-green">${fmt(best.int)}</span>), saving you <span class="h-green">${fmt(diffSavings)}</span> compared to other options!`;
 }
 
 // ─── 9. SHARE CALCULATION AS IMAGE (CANVAS HD) ───
@@ -1066,7 +1259,7 @@ function initSwipeGestures() {
   document.addEventListener('touchstart', e => {
     if (e.touches.length !== 1) return;
     const target = e.target;
-    if (target.closest('input[type=range], input, textarea, .tbl-scroll, .chart-canvas-wrap')) return;
+    if (target.closest('input[type=range], input, textarea, .tbl-scroll, .chart-canvas-wrap, .quick-presets, .chip-row, .subnav-pills, .fee-type-toggle, .toggle-pill, .buy-row')) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     startTime = Date.now();
@@ -1084,14 +1277,16 @@ function initSwipeGestures() {
     startY = 0;
     startTime = 0;
 
-    if (Math.abs(deltaX) > 65 && Math.abs(deltaY) < 45 && elapsed < 450) {
+    if (Math.abs(deltaX) > 60 && Math.abs(deltaY) < 45 && elapsed < 450) {
       const currentActive = document.querySelector('.tabbar-item.active')?.dataset.tab || 'emi';
       const currentIndex = tabs.indexOf(currentActive);
       if (currentIndex === -1) return;
 
       if (deltaX < 0 && currentIndex < tabs.length - 1) {
+        triggerHaptic('light');
         switchTab(tabs[currentIndex + 1]);
       } else if (deltaX > 0 && currentIndex > 0) {
+        triggerHaptic('light');
         switchTab(tabs[currentIndex - 1]);
       }
     }
@@ -1380,6 +1575,10 @@ function calculateEMI() {
     prepayBox.style.display = 'none';
   }
 
+  const savedIntAmt = (hasPrepay && actualMonths < n) ? Math.max(0, totalInt - actualTotalInt) : 0;
+  const savedMonthsAmt = (hasPrepay && actualMonths < n) ? Math.max(0, n - actualMonths) : 0;
+  updateEmiInsight(P, r, n, emi, totalInt, hasPrepay, savedIntAmt, savedMonthsAmt);
+
   // Pre-calculate yearly data for the Amortization Chart
   const yearlyChartData = [];
   let chartBal = P;
@@ -1524,6 +1723,7 @@ function calculateSIP() {
   const retPct = corpus > 0 ? ((ret / corpus) * 100).toFixed(0) : 0;
   document.getElementById('s-gain-pct').textContent = retPct + '%';
   updateDonut('si-arc', 'sr-arc', inv, Math.max(ret, 0));
+  updateSipInsight(inv, ret, corpus, yr, su * 100);
 
   let ci = 0, val = 0, mon = M;
   const tb = document.getElementById('s-tbody');
@@ -1962,6 +2162,8 @@ function calcBalanceTransfer() {
     }
   }
 
+  updateBtInsight(netSavings, breakevenMonths, currentRate, newRate);
+
   const verdictEl = document.getElementById('bt-verdict');
   if (verdictEl) {
     if (netSavings > 25000) {
@@ -2261,6 +2463,12 @@ function calcTopUp() {
     }
   }
 
+  updateTuInsight(
+    { totalInterest: wholeLifetimeInterestA, mergedEMI: emiScenarioA },
+    { totalInterest: wholeLifetimeInterestB, combinedEMI: combinedEmiB },
+    canKeepSameEMI ? { totalInterest: wholeLifetimeInterestC, targetEMI: origEMI } : { totalInterest: Infinity, targetEMI: origEMI }
+  );
+
   // Render Schedule Table
   renderTopUpTable(phase1Yearly, mergedDebt, newTenureMonths, topRate, emiScenarioA, topAmt, actualElapsedMonths);
   updateAmountInWords('tu-p-i', 'tu-p-words');
@@ -2328,9 +2536,9 @@ let avgType = 'stock';
 let avgRowCount = 0;
 
 const avgLabels = {
-  stock: { qty: 'Shares', price: 'Buy Price (₹)', unit: 'shares' },
-  mf: { qty: 'Units', price: 'NAV (₹)', unit: 'units' },
-  crypto: { qty: 'Coins', price: 'Buy Price (₹)', unit: 'coins' }
+  stock: { qty: 'SHARES', price: 'Buy Price', unit: 'shares' },
+  mf: { qty: 'UNITS', price: 'Buy Price / NAV', unit: 'units' },
+  crypto: { qty: 'COINS', price: 'Buy Price', unit: 'coins' }
 };
 
 function setAvgType(t, el) {
@@ -2351,13 +2559,13 @@ function addAvgRow(qty = '', price = '') {
   div.id = 'avg-row-' + n;
   div.innerHTML = `
     <div class="buy-num">${n}</div>
-    <div class="inp-wrap">
-      <input class="inp" type="number" id="avg-qty-${n}" value="${qty}" min="0" placeholder="0" data-calc="avg" style="text-align:center" aria-label="Quantity for tranche ${n}">
+    <div class="inp-wrap avg-inp-wrap">
+      <input class="inp avg-inp" type="number" id="avg-qty-${n}" value="${qty}" min="0" placeholder="0" data-calc="avg" aria-label="Quantity for tranche ${n}">
     </div>
-    <div class="inp-wrap">
-      <input class="inp" type="number" id="avg-price-${n}" value="${price}" min="0" placeholder="0.00" step="0.01" data-calc="avg" style="text-align:center" aria-label="Buy price for tranche ${n}">
+    <div class="inp-wrap avg-inp-wrap">
+      <input class="inp avg-inp" type="number" id="avg-price-${n}" value="${price}" min="0" placeholder="0.00" step="0.01" data-calc="avg" aria-label="Buy price for tranche ${n}">
     </div>
-    <button type="button" class="del-btn" data-action="remove-avg-row" data-val="${n}" title="Remove" aria-label="Remove buy tranche ${n}">×</button>`;
+    <button type="button" class="del-btn" data-action="remove-avg-row" data-val="${n}" title="Remove tranche ${n}" aria-label="Remove buy tranche ${n}">×</button>`;
   document.getElementById('avg-rows').appendChild(div);
   calcAvg();
   savePreferences();
@@ -2400,7 +2608,7 @@ function calcAvg() {
   const tbody = document.getElementById('avg-tbody');
   const tfoot = document.getElementById('avg-tfoot');
   const totalTag = document.getElementById('avg-total-tag');
-  const lbl = avgLabels[avgType];
+  const lbl = avgLabels[avgType] || avgLabels.stock;
   const sym = currentCurrency.symbol === 'AED' ? 'AED ' : currentCurrency.symbol;
   const loc = currentCurrency.locale;
 
@@ -2427,87 +2635,85 @@ function calcAvg() {
   const isProfit = pnl >= 0;
 
   resDiv.innerHTML = `
-    <div class="avg-stat" style="background:var(--green-lt);margin-bottom:14px">
-      <div class="avg-stat-lbl">Average Buy Price</div>
-      <div class="avg-stat-val big">${sym}${avgPrice.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+    <div class="avg-hero-stat">
+      <div class="avg-hero-lbl">AVERAGE BUY PRICE</div>
+      <div class="avg-hero-val">${sym}${avgPrice.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div class="avg-stat">
-        <div class="avg-stat-lbl">Total ${lbl.unit}</div>
+    <div class="avg-stats-grid">
+      <div class="avg-stat-card">
+        <div class="avg-stat-lbl">TOTAL ${lbl.qty}</div>
         <div class="avg-stat-val">${totalQty.toLocaleString(loc, { maximumFractionDigits: 4 })}</div>
       </div>
-      <div class="avg-stat">
-        <div class="avg-stat-lbl">Total Invested</div>
+      <div class="avg-stat-card">
+        <div class="avg-stat-lbl">TOTAL INVESTED</div>
         <div class="avg-stat-val">${fmt(totalInv)}</div>
       </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div class="avg-stat">
-        <div class="avg-stat-lbl">No. of Buys</div>
+      <div class="avg-stat-card">
+        <div class="avg-stat-lbl">NO. OF BUYS</div>
         <div class="avg-stat-val">${rows.length}</div>
       </div>
-      <div class="avg-stat">
-        <div class="avg-stat-lbl">Break-Even Price</div>
-        <div class="avg-stat-val">${sym}${avgPrice.toFixed(2)}</div>
+      <div class="avg-stat-card">
+        <div class="avg-stat-lbl">BREAK-EVEN PRICE</div>
+        <div class="avg-stat-val">${sym}${avgPrice.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
       </div>
     </div>
     ${cmp > 0 ? `
-    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
+    <div class="avg-pnl-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:.83rem;color:var(--text2);font-weight:600">Current Value</span>
-        <span style="font-size:1.05rem;font-weight:800">${fmt(curVal)}</span>
+        <span style="font-size:.83rem;color:var(--text2);font-weight:700">Current Portfolio Value</span>
+        <span style="font-size:1.1rem;font-weight:800">${fmt(curVal)}</span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:.83rem;color:var(--text2);font-weight:600">Unrealized P&amp;L</span>
-        <span style="font-size:1.05rem;font-weight:800;color:${isProfit ? 'var(--green)' : 'var(--red)'}">${isProfit ? '+' : ''}${fmt(pnl)} (${isProfit ? '+' : ''}${pnlPct.toFixed(2)}%)</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:.83rem;color:var(--text2);font-weight:700">Unrealized P&amp;L</span>
+        <span style="font-size:1.1rem;font-weight:800;color:${isProfit ? 'var(--green)' : 'var(--red)'}">${isProfit ? '+' : ''}${fmt(pnl)} (${isProfit ? '+' : ''}${pnlPct.toFixed(2)}%)</span>
       </div>
       <div class="avg-bar-wrap">
         <div class="avg-bar" style="width:${Math.min(Math.abs(pnlPct), 100)}%;background:${isProfit ? 'var(--green)' : 'var(--red)'}"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.72rem;color:var(--text3)">
-        <span>Cost: ${sym}${avgPrice.toFixed(2)}</span>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:0.75rem;color:var(--text3);font-weight:600">
+        <span>Avg Cost: ${sym}${avgPrice.toFixed(2)}</span>
         <span>CMP: ${sym}${cmp.toLocaleString(loc, { minimumFractionDigits: 2 })}</span>
       </div>
-    </div>` : `<div style="padding:12px;background:var(--bg);border-radius:8px;font-size:0.8rem;color:var(--text3);text-align:center">Enter CMP above to calculate live P&L</div>`}`;
+    </div>` : `<div class="avg-cmp-banner">Enter CMP above to calculate live P&L</div>`}`;
 
   // Table
   tbody.innerHTML = rows.map((r, i) => {
     const rowPnl = cmp > 0 ? (cmp - r.price) * r.qty : null;
     const rowPct = cmp > 0 ? ((cmp - r.price) / r.price) * 100 : null;
-    const invPct = (r.inv / totalInv) * 100;
+    const invPct = totalInv > 0 ? (r.inv / totalInv) * 100 : 0;
     return `<tr>
-      <td><span class="buy-num" style="display:inline-flex">${i + 1}</span></td>
-      <td>${r.qty.toLocaleString(loc, { maximumFractionDigits: 4 })}</td>
+      <td><span class="buy-num-sm">${i + 1}</span></td>
+      <td style="font-weight:700">${r.qty.toLocaleString(loc, { maximumFractionDigits: 4 })}</td>
       <td>${sym}${r.price.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      <td>${fmt(r.inv)}</td>
+      <td style="font-weight:700">${fmt(r.inv)}</td>
       <td>
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="flex:1;background:var(--border);border-radius:3px;height:5px;overflow:hidden">
-            <div style="width:${invPct.toFixed(1)}%;height:100%;background:var(--green);border-radius:3px"></div>
+        <div class="weight-bar-wrap">
+          <div class="weight-bar-track">
+            <div class="weight-bar-fill" style="width:${invPct.toFixed(1)}%"></div>
           </div>
-          <span style="font-size:0.75rem;color:var(--text2);white-space:nowrap">${invPct.toFixed(1)}%</span>
+          <span class="weight-bar-pct">${invPct.toFixed(1)}%</span>
         </div>
       </td>
       <td>${rowPnl !== null
         ? `<span class="price-tag ${rowPnl >= 0 ? 'tag-profit' : 'tag-loss'}">${rowPnl >= 0 ? '+' : ''}${fmt(rowPnl)} (${rowPct >= 0 ? '+' : ''}${rowPct.toFixed(1)}%)</span>`
-        : '<span style="color:var(--text3);font-size:.78rem">—</span>'
+        : '<span style="color:var(--text3);font-size:.85rem;font-weight:600">—</span>'
       }</td>
     </tr>`;
   }).join('');
 
   const totalPnl = cmp > 0 ? (cmp * totalQty) - totalInv : null;
   tfoot.innerHTML = `<tr>
-    <td>Total</td>
-    <td>${totalQty.toLocaleString(loc, { maximumFractionDigits: 4 })}</td>
-    <td class="tg">Avg ${sym}${avgPrice.toFixed(2)}</td>
-    <td>${fmt(totalInv)}</td>
-    <td>100%</td>
+    <td style="font-weight:800">Total</td>
+    <td style="font-weight:800">${totalQty.toLocaleString(loc, { maximumFractionDigits: 4 })}</td>
+    <td class="tg" style="font-weight:800;color:var(--green)">Avg ${sym}${avgPrice.toFixed(2)}</td>
+    <td style="font-weight:800">${fmt(totalInv)}</td>
+    <td style="font-weight:800">100%</td>
     <td>${totalPnl !== null
       ? `<span class="price-tag ${totalPnl >= 0 ? 'tag-profit' : 'tag-loss'}">${totalPnl >= 0 ? '+' : ''}${fmt(totalPnl)}</span>`
-      : '<span style="color:var(--text3);font-size:.78rem">—</span>'}</td>
+      : '<span style="color:var(--text3);font-size:.85rem;font-weight:600">—</span>'}</td>
   </tr>`;
 
-  totalTag.textContent = `${rows.length} buy${rows.length > 1 ? 's' : ''} · ${totalQty.toLocaleString('en-IN', { maximumFractionDigits: 4 })} ${lbl.unit}`;
+  totalTag.textContent = `${rows.length} buys • ${totalQty.toLocaleString(loc, { maximumFractionDigits: 4 })} ${lbl.unit}`;
   savePreferences();
 }
 
@@ -3255,7 +3461,6 @@ function restorePreferences() {
         });
       } else {
         // Fallback default rows if array was empty
-        addAvgRow(10, 150);
         addAvgRow(15, 130);
         addAvgRow(20, 110);
       }
@@ -3266,7 +3471,6 @@ function restorePreferences() {
       }
     } else {
       // First visit: add default Stock Average rows
-      addAvgRow(10, 150);
       addAvgRow(15, 130);
       addAvgRow(20, 110);
     }
@@ -3298,6 +3502,7 @@ try {
 initAllSliders();
 initFloatingPill();
 initSwipeGestures();
+initChartScrubbing();
 triggerSkeletonShimmer();
 
 // Re-run fills and charts whenever window resizes
@@ -3379,7 +3584,7 @@ function forceCheckUpdate() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     // Cache bust query string ensures Safari always fetches updated sw script
-    navigator.serviceWorker.register('./sw.js?v=15', { scope: './' })
+    navigator.serviceWorker.register('./sw.js?v=16', { scope: './' })
       .then(reg => {
         // Check for updates on startup
         reg.update();
@@ -3917,6 +4122,7 @@ window.addEventListener('load', () => {
     updateAllAmountInWords();
     calcBalanceTransfer();
     calcTopUp();
+    initChartScrubbing();
     if (window._lastYearlyAmortData) drawAmortizationChart(window._lastYearlyAmortData);
     if (window._lastSipChartData) drawSipChart(window._lastSipChartData);
   }, 200);

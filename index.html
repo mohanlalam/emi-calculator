@@ -432,6 +432,19 @@
 
   <!-- Amortization Schedule Table -->
   <div class="amort-sec">
+    <!-- Smart Prepayment / Financial Insight Card -->
+    <div class="smart-insight-card" id="emi-smart-insight">
+      <div class="insight-icon">💡</div>
+      <div class="insight-body">
+        <div class="insight-head">
+          <span class="insight-badge">Smart Loan Insight</span>
+        </div>
+        <div class="insight-text" id="emi-insight-text">
+          Calculating loan optimization tips...
+        </div>
+      </div>
+    </div>
+
     <!-- Amortization Visualizer Interactive Canvas Chart -->
     <div class="chart-container-box">
       <div class="chart-header">
@@ -447,6 +460,7 @@
       </div>
       <div class="chart-canvas-wrap">
         <canvas id="amort-chart" width="800" height="230" aria-label="Amortization Schedule Chart" role="img"></canvas>
+        <div id="amort-chart-tooltip" class="chart-scrub-tooltip"></div>
       </div>
     </div>
 
@@ -634,6 +648,19 @@
   </div>
 
   <div class="amort-sec">
+    <!-- Smart Wealth Compounder Insight Card -->
+    <div class="smart-insight-card" id="sip-smart-insight">
+      <div class="insight-icon">🚀</div>
+      <div class="insight-body">
+        <div class="insight-head">
+          <span class="insight-badge">Wealth Compounder Insight</span>
+        </div>
+        <div class="insight-text" id="sip-insight-text">
+          Calculating wealth growth multiplier...
+        </div>
+      </div>
+    </div>
+
     <!-- SIP Growth Visualizer Interactive Canvas Chart -->
     <div class="chart-container-box">
       <div class="chart-header">
@@ -648,6 +675,7 @@
       </div>
       <div class="chart-canvas-wrap">
         <canvas id="sip-chart" width="800" height="230" aria-label="SIP Wealth Visualizer Chart" role="img"></canvas>
+        <div id="sip-chart-tooltip" class="chart-scrub-tooltip"></div>
       </div>
     </div>
 
@@ -882,6 +910,19 @@
 
       <!-- Right: Refinance Results Card -->
       <div class="card">
+        <!-- Smart Balance Transfer Insight Card -->
+        <div class="smart-insight-card" id="bt-smart-insight">
+          <div class="insight-icon">✨</div>
+          <div class="insight-body">
+            <div class="insight-head">
+              <span class="insight-badge">Refinance Verdict</span>
+            </div>
+            <div class="insight-text" id="bt-insight-text">
+              Evaluating refinance break-even...
+            </div>
+          </div>
+        </div>
+
         <div class="bt-hero-card">
           <div class="bt-hero-lbl">Net Lifetime Interest Saved</div>
           <div class="bt-hero-amt" id="bt-net-savings">₹4,45,300</div>
@@ -1082,6 +1123,19 @@
 
       <!-- Right: Top-Up Results & Scenarios Card -->
       <div class="card">
+        <!-- Smart Top-Up Recommendation Insight Card -->
+        <div class="smart-insight-card" id="tu-smart-insight">
+          <div class="insight-icon">⭐</div>
+          <div class="insight-body">
+            <div class="insight-head">
+              <span class="insight-badge">Recommended Strategy</span>
+            </div>
+            <div class="insight-text" id="tu-insight-text">
+              Evaluating cost across restructuring scenarios...
+            </div>
+          </div>
+        </div>
+
         <div class="bt-hero-card" style="background:linear-gradient(135deg,rgba(0,180,255,0.12),rgba(0,229,160,0.08));border-color:rgba(0,180,255,0.3)">
           <div class="bt-hero-lbl">Whole Lifetime Interest Payable</div>
           <div class="bt-hero-amt" id="tu-hero-lifetime-int" style="color:var(--blue)">₹62,45,210</div>
@@ -1406,17 +1460,17 @@
   <div class="avg-body">
     <!-- LEFT: Buy Entries -->
     <div class="card">
-      <div class="chip-row" role="radiogroup" aria-label="Average Asset Class">
+      <div class="chip-row avg-type-row" role="radiogroup" aria-label="Average Asset Class">
         <button type="button" class="chip active" data-action="set-avg-type" data-val="stock">📈 Stocks</button>
         <button type="button" class="chip" data-action="set-avg-type" data-val="mf">💼 Mutual Funds</button>
         <button type="button" class="chip" data-action="set-avg-type" data-val="crypto">🪙 Crypto</button>
       </div>
 
-      <div style="display:grid;grid-template-columns:auto 1fr 1fr auto;gap:10px;margin-bottom:8px;padding:0 2px">
-        <div style="width:28px"></div>
-        <div style="font-size:0.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px" id="avg-lbl-col1">Qty / Units</div>
-        <div style="font-size:0.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Buy Price (<span class="curr-pfx">₹</span>)</div>
-        <div style="width:32px"></div>
+      <div class="buy-header-row">
+        <div class="buy-header-spacer"></div>
+        <div class="buy-col-lbl" id="avg-lbl-col1">SHARES</div>
+        <div class="buy-col-lbl" id="avg-lbl-col2">BUY PRICE (<span class="curr-pfx">₹</span>)</div>
+        <div class="buy-header-spacer"></div>
       </div>
 
       <div id="avg-rows"></div>
@@ -1425,10 +1479,10 @@
 
       <!-- CMP Input -->
       <div class="field" style="margin-top:20px;margin-bottom:0">
-        <label class="field-lbl" for="avg-cmp">Current Market Price (CMP) - Optional</label>
+        <label class="field-lbl avg-cmp-lbl" for="avg-cmp">CURRENT MARKET PRICE (CMP) - OPTIONAL</label>
         <div class="inp-wrap">
           <span class="inp-pfx">₹</span>
-          <input class="inp" type="number" id="avg-cmp" placeholder="Enter CMP for live P&L" aria-label="Current Market Price" data-calc="avg">
+          <input class="inp avg-cmp-inp" type="number" id="avg-cmp" placeholder="Enter CMP for live P&L" aria-label="Current Market Price" data-calc="avg">
         </div>
       </div>
     </div>
