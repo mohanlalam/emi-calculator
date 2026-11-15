@@ -2401,6 +2401,8 @@ function calcAvg() {
   const tfoot = document.getElementById('avg-tfoot');
   const totalTag = document.getElementById('avg-total-tag');
   const lbl = avgLabels[avgType];
+  const sym = currentCurrency.symbol === 'AED' ? 'AED ' : currentCurrency.symbol;
+  const loc = currentCurrency.locale;
 
   if (rows.length === 0) {
     resDiv.innerHTML = `
@@ -2427,12 +2429,12 @@ function calcAvg() {
   resDiv.innerHTML = `
     <div class="avg-stat" style="background:var(--green-lt);margin-bottom:14px">
       <div class="avg-stat-lbl">Average Buy Price</div>
-      <div class="avg-stat-val big">₹${avgPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+      <div class="avg-stat-val big">${sym}${avgPrice.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div class="avg-stat">
         <div class="avg-stat-lbl">Total ${lbl.unit}</div>
-        <div class="avg-stat-val">${totalQty.toLocaleString('en-IN', { maximumFractionDigits: 4 })}</div>
+        <div class="avg-stat-val">${totalQty.toLocaleString(loc, { maximumFractionDigits: 4 })}</div>
       </div>
       <div class="avg-stat">
         <div class="avg-stat-lbl">Total Invested</div>
@@ -2446,7 +2448,7 @@ function calcAvg() {
       </div>
       <div class="avg-stat">
         <div class="avg-stat-lbl">Break-Even Price</div>
-        <div class="avg-stat-val">₹${avgPrice.toFixed(2)}</div>
+        <div class="avg-stat-val">${sym}${avgPrice.toFixed(2)}</div>
       </div>
     </div>
     ${cmp > 0 ? `
@@ -2463,8 +2465,8 @@ function calcAvg() {
         <div class="avg-bar" style="width:${Math.min(Math.abs(pnlPct), 100)}%;background:${isProfit ? 'var(--green)' : 'var(--red)'}"></div>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.72rem;color:var(--text3)">
-        <span>Cost: ₹${avgPrice.toFixed(2)}</span>
-        <span>CMP: ₹${cmp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+        <span>Cost: ${sym}${avgPrice.toFixed(2)}</span>
+        <span>CMP: ${sym}${cmp.toLocaleString(loc, { minimumFractionDigits: 2 })}</span>
       </div>
     </div>` : `<div style="padding:12px;background:var(--bg);border-radius:8px;font-size:0.8rem;color:var(--text3);text-align:center">Enter CMP above to calculate live P&L</div>`}`;
 
@@ -2475,8 +2477,8 @@ function calcAvg() {
     const invPct = (r.inv / totalInv) * 100;
     return `<tr>
       <td><span class="buy-num" style="display:inline-flex">${i + 1}</span></td>
-      <td>${r.qty.toLocaleString('en-IN', { maximumFractionDigits: 4 })}</td>
-      <td>₹${r.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td>${r.qty.toLocaleString(loc, { maximumFractionDigits: 4 })}</td>
+      <td>${sym}${r.price.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       <td>${fmt(r.inv)}</td>
       <td>
         <div style="display:flex;align-items:center;gap:6px">
@@ -2494,15 +2496,15 @@ function calcAvg() {
   }).join('');
 
   const totalPnl = cmp > 0 ? (cmp * totalQty) - totalInv : null;
-  tfoot.innerHTML = `<tr style="background:var(--bg);font-weight:700;border-top:2px solid var(--border)">
-    <td style="font-weight:800;color:var(--text)">Total</td>
-    <td style="font-weight:800;color:var(--text)">${totalQty.toLocaleString('en-IN', { maximumFractionDigits: 4 })}</td>
-    <td style="font-weight:800;color:var(--green)">Avg ₹${avgPrice.toFixed(2)}</td>
-    <td style="font-weight:800;color:var(--text)">${fmt(totalInv)}</td>
+  tfoot.innerHTML = `<tr>
+    <td>Total</td>
+    <td>${totalQty.toLocaleString(loc, { maximumFractionDigits: 4 })}</td>
+    <td class="tg">Avg ${sym}${avgPrice.toFixed(2)}</td>
+    <td>${fmt(totalInv)}</td>
     <td>100%</td>
     <td>${totalPnl !== null
       ? `<span class="price-tag ${totalPnl >= 0 ? 'tag-profit' : 'tag-loss'}">${totalPnl >= 0 ? '+' : ''}${fmt(totalPnl)}</span>`
-      : '—'}</td>
+      : '<span style="color:var(--text3);font-size:.78rem">—</span>'}</td>
   </tr>`;
 
   totalTag.textContent = `${rows.length} buy${rows.length > 1 ? 's' : ''} · ${totalQty.toLocaleString('en-IN', { maximumFractionDigits: 4 })} ${lbl.unit}`;

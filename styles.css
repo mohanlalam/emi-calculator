@@ -596,6 +596,48 @@ tbody td:first-child { text-align: left; color: var(--text); font-weight: 700; }
 .month-subrow td:first-child { padding-left: 28px; color: var(--text2); }
 [data-theme="light"] .month-subrow { background: rgba(0,0,0,0.03); }
 
+/* Table Footer styling & sticky positioning */
+tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+}
+tfoot tr {
+  background: var(--card-solid);
+}
+tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: var(--card-solid);
+  padding: 13px 16px 14px;
+  text-align: right;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.84rem;
+  white-space: nowrap;
+  border-top: 2px solid var(--glass-border);
+}
+[data-theme="light"] tfoot tr,
+[data-theme="light"] tfoot td {
+  background: #ffffff;
+  border-top: 2px solid var(--border);
+}
+tfoot td:first-child {
+  text-align: left;
+  font-weight: 800;
+  color: var(--text);
+  text-transform: uppercase;
+  font-size: 0.76rem;
+  letter-spacing: 0.5px;
+}
+tbody tr:last-child {
+  border-bottom: none;
+}
+tbody tr:last-child td {
+  padding-bottom: 14px;
+}
+
 /* ============ PANELS ============ */
 .calc-panel { display: none; }
 .calc-panel.active { display: block; animation: panelSlideIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
@@ -875,6 +917,8 @@ tbody td:first-child { text-align: left; color: var(--text); font-weight: 700; }
   .res-val { font-size: 0.9rem; }
   thead th { padding: 10px 12px; font-size: 0.66rem; }
   tbody td { padding: 9px 12px; font-size: 0.75rem; }
+  tfoot td { padding: 10px 12px 12px; font-size: 0.76rem; }
+  tfoot td:first-child { font-size: 0.72rem; }
   .buy-row { gap: 6px; }
   .buy-num { width: 24px; height: 24px; font-size: 0.68rem; }
   .del-btn { width: 28px; height: 28px; font-size: 1rem; }
@@ -920,7 +964,7 @@ tbody td:first-child { text-align: left; color: var(--text); font-weight: 700; }
 /* ============ FLOATING EMI PILL ============ */
 .floating-pill {
   position: fixed;
-  bottom: calc(var(--tabbar-height) + 14px);
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 14px);
   left: 50%;
   transform: translateX(-50%) translateY(140%) scale(0.92);
   display: flex;
@@ -938,6 +982,12 @@ tbody td:first-child { text-align: left; color: var(--text); font-weight: 700; }
   opacity: 0;
   pointer-events: none;
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+}
+
+@media (min-width: 769px) {
+  .floating-pill {
+    bottom: calc(env(safe-area-inset-bottom) + 24px);
+  }
 }
 .floating-pill.visible {
   transform: translateX(-50%) translateY(0) scale(1);
